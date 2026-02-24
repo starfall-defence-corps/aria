@@ -1,0 +1,59 @@
+name: "ARIA — Mission Review"
+description: "Automated Review & Intelligence Analyst for Starfall Defence Corps Academy"
+
+inputs:
+  mission:
+    description: "Mission ID (e.g., 1-1)"
+    required: true
+  mission-root:
+    description: "Absolute path to the checked-out mission repo"
+    required: true
+  output-file:
+    description: "Path to write ARIA output (for PR comment)"
+    required: false
+    default: "aria-output.txt"
+  anthropic-api-key:
+    description: "Anthropic API key for LLM review"
+    required: false
+    default: ""
+
+outputs:
+  exit-code:
+    description: "Test exit code (0 = pass)"
+    value: ${{ steps.run-aria.outputs.exit_code }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install ARIA dependencies
+      shell: bash
+      run: pip install anthropic
+
+    - name: Install mission dependencies
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.mission-root }}/requirements.txt" ]; then
+          pip install -r "${{ inputs.mission-root }}/requirements.txt"
+        fi
+        pip install ansible-core
+
+    - name: Run ARIA review
+      id: run-aria
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+      run: |
+        set +e
+        python "${{ github.action_path }}/aria-review.py" \
+          --mission "${{ inputs.mission }}" \
+          --mission-root "${{ inputs.mission-root }}" \
+          --output "${{ inputs.output-file }}" \
+          2>&1 | tee aria-console.txt
+        EXIT=$?
+        echo "exit_code=$EXIT" >> "$GITHUB_OUTPUT"
+        set -e
