@@ -24,6 +24,14 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "1-2": {
+        "test": "molecule/default/tests/test_lock_the_door.py",
+        "student_files": [
+            "workspace/playbook.yml",
+            "workspace/inventory/hosts.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
 }
 
 
