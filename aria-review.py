@@ -6,6 +6,7 @@ then sends results to LLM for qualitative review.
 
 Usage:
     python aria-review.py --mission 1-1 --mission-root /path/to/mission-repo
+    python aria-review.py --mission 1-2 --skip-tests  # LLM review only (CI)
 
 Requires:
     ANTHROPIC_API_KEY environment variable (optional — skips LLM review if absent)
@@ -48,7 +49,6 @@ def _run_tests(mission_id, mission_root_override=None):
     config = MISSION_MAP[mission_id]
     test_path = os.path.join(mission_dir, config["test"])
 
-    # Activate venv if present
     venv_python = os.path.join(mission_dir, "venv", "bin", "python3")
     python_cmd = venv_python if os.path.isfile(venv_python) else sys.executable
 
@@ -98,18 +98,24 @@ def _build_user_message(test_exit_code, test_stdout, test_stderr, student_files)
     parts = []
 
     parts.append("## Test Results")
-    parts.append(
-        f"Exit code: {test_exit_code} "
-        f"({'PASSED' if test_exit_code == 0 else 'FAILED'})"
-    )
-    parts.append("")
-    parts.append("```")
-    parts.append(test_stdout.strip())
-    if test_stderr.strip():
+    if test_exit_code is None:
+        parts.append(
+            "Tests not run (CI mode — deterministic tests require Docker "
+            "and run locally via `make test`)."
+        )
+    else:
+        parts.append(
+            f"Exit code: {test_exit_code} "
+            f"({'PASSED' if test_exit_code == 0 else 'FAILED'})"
+        )
         parts.append("")
-        parts.append("STDERR:")
-        parts.append(test_stderr.strip())
-    parts.append("```")
+        parts.append("```")
+        parts.append(test_stdout.strip())
+        if test_stderr.strip():
+            parts.append("")
+            parts.append("STDERR:")
+            parts.append(test_stderr.strip())
+        parts.append("```")
     parts.append("")
 
     parts.append("## Student Files")
@@ -157,25 +163,39 @@ def main():
         "--output",
         help="Write review to file instead of stdout",
     )
+    parser.add_argument(
+        "--skip-tests",
+        action="store_true",
+        help="Skip deterministic tests (LLM review only, for CI)",
+    )
     args = parser.parse_args()
 
     print()
     print("==============================================")
     print("  ARIA - Automated Review & Intelligence Analyst")
-    print(f"  Running Mission {args.mission} Verification...")
+    print(f"  Running Mission {args.mission} Review...")
     print("==============================================")
     print()
 
-    # Phase 1: Deterministic tests
-    test_exit_code, test_stdout, test_stderr = _run_tests(
-        args.mission, args.mission_root
-    )
+    # Phase 1: Deterministic tests (skip in CI mode)
+    test_exit_code = None
+    test_stdout = ""
+    test_stderr = ""
+    themed_output = ""
 
-    # Display test results with ARIA theming
-    themed_output = test_stdout.replace("PASSED", "VERIFIED").replace(
-        "FAILED", "DEFICIENCY DETECTED"
-    )
-    print(themed_output)
+    if args.skip_tests:
+        print("  Deterministic tests: SKIPPED (CI mode)")
+        print("  Run 'make test' locally for full verification.")
+        print()
+        themed_output = "Tests skipped (CI mode — LLM review only)\n"
+    else:
+        test_exit_code, test_stdout, test_stderr = _run_tests(
+            args.mission, args.mission_root
+        )
+        themed_output = test_stdout.replace("PASSED", "VERIFIED").replace(
+            "FAILED", "DEFICIENCY DETECTED"
+        )
+        print(themed_output)
 
     review_text = ""
 
@@ -210,7 +230,8 @@ def main():
             print()
             print("----------------------------------------------")
             print(f"  ARIA review error: {e}")
-            print("  Deterministic test results remain valid.")
+            if not args.skip_tests:
+                print("  Deterministic test results remain valid.")
             print("----------------------------------------------")
 
     # Write to file if requested (for GitHub Actions)
@@ -221,9 +242,16 @@ def main():
                 f.write("\n\n## ARIA QUALITATIVE REVIEW\n\n")
                 f.write(review_text)
 
-    # Final banner
+    # Final banner and exit
     print()
-    if test_exit_code == 0:
+    if args.skip_tests:
+        print("==============================================")
+        print("  ARIA: Qualitative review complete.")
+        print("  Run 'make test' locally for full verification.")
+        print("==============================================")
+        print()
+        sys.exit(0)
+    elif test_exit_code == 0:
         print("==============================================")
         print("  ARIA: All objectives verified.")
         print(f"  Mission {args.mission} status: COMPLETE")
@@ -236,7 +264,7 @@ def main():
         print("==============================================")
     print()
 
-    sys.exit(test_exit_code)
+    sys.exit(test_exit_code or 0)
 
 
 if __name__ == "__main__":
