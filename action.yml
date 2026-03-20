@@ -16,6 +16,10 @@ inputs:
     description: "Anthropic API key for LLM review"
     required: false
     default: ""
+  skip-tests:
+    description: "Skip deterministic tests (LLM review only, no Docker needed)"
+    required: false
+    default: "false"
 
 outputs:
   exit-code:
@@ -35,6 +39,7 @@ runs:
       run: pip install anthropic
 
     - name: Install mission dependencies
+      if: inputs.skip-tests != 'true'
       shell: bash
       run: |
         if [ -f "${{ inputs.mission-root }}/requirements.txt" ]; then
@@ -49,10 +54,15 @@ runs:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
       run: |
         set +e
+        SKIP_FLAG=""
+        if [ "${{ inputs.skip-tests }}" = "true" ]; then
+          SKIP_FLAG="--skip-tests"
+        fi
         python "${{ github.action_path }}/aria-review.py" \
           --mission "${{ inputs.mission }}" \
           --mission-root "${{ inputs.mission-root }}" \
           --output "${{ inputs.output-file }}" \
+          $SKIP_FLAG \
           2>&1 | tee aria-console.txt
         EXIT=$?
         echo "exit_code=$EXIT" >> "$GITHUB_OUTPUT"
