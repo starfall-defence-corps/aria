@@ -86,6 +86,15 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "2-2": {
+        "test": "molecule/default/tests/test_compliance.py",
+        "student_files": [
+            "workspace/obstacle-course/mission-1/site.yml",
+            "workspace/obstacle-course/mission-2/site.yml",
+            "workspace/main-mission/COMPLIANCE.md",
+            "workspace/ansible.cfg",
+        ],
+    },
 }
 
 
