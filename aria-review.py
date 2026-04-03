@@ -33,6 +33,39 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "1-3": {
+        "test": "molecule/default/tests/test_clean_sweep.py",
+        "student_files": [
+            "workspace/playbook.yml",
+            "workspace/files/sysctl-hardened.conf",
+            "workspace/inventory/hosts.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
+    "1-4": {
+        "test": "molecule/default/tests/test_many_ships.py",
+        "student_files": [
+            "workspace/playbook.yml",
+            "workspace/inventory/hosts.yml",
+            "workspace/inventory/group_vars/all.yml",
+            "workspace/inventory/group_vars/debian.yml",
+            "workspace/inventory/group_vars/redhat.yml",
+            "workspace/templates/sshd_config.j2",
+            "workspace/templates/motd.j2",
+            "workspace/ansible.cfg",
+        ],
+    },
+    "1-5": {
+        "test": "molecule/default/tests/test_clean_house.py",
+        "student_files": [
+            "workspace/site.yml",
+            "workspace/inventory/hosts.yml",
+            "workspace/inventory/group_vars/all.yml",
+            "workspace/inventory/group_vars/debian.yml",
+            "workspace/inventory/group_vars/redhat.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
 }
 
 
