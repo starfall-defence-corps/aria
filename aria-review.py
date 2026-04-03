@@ -68,6 +68,7 @@ MISSION_MAP = {
     },
     "gateway": {
         "test": "molecule/default/tests/test_gateway.py",
+        "context_file": "gateway-simulation.md",
         "student_files": [
             "workspace/site.yml",
             "workspace/RECON.md",
@@ -108,6 +109,20 @@ MISSION_MAP = {
         "test": "molecule/default/tests/test_pipeline.py",
         "student_files": [
             "workspace/main-mission/PIPELINE.md",
+            "workspace/ansible.cfg",
+        ],
+    },
+    "master": {
+        "test": "molecule/default/tests/test_iron_curtain.py",
+        "context_file": "master-simulation.md",
+        "student_files": [
+            "workspace/site.yml",
+            "workspace/ASSESSMENT.md",
+            "workspace/INCIDENT.md",
+            "workspace/PIPELINE.md",
+            "workspace/inventory/hosts.yml",
+            "workspace/inventory/group_vars/debian.yml",
+            "workspace/inventory/group_vars/redhat.yml",
             "workspace/ansible.cfg",
         ],
     },
@@ -164,7 +179,9 @@ def _load_prompts(mission_id):
     with open(base_path) as f:
         base_prompt = f.read()
 
-    mission_path = os.path.join(aria_dir, "missions", f"mission-{mission_id}.md")
+    config = MISSION_MAP[mission_id]
+    context_filename = config.get("context_file", f"mission-{mission_id}.md")
+    mission_path = os.path.join(aria_dir, "missions", context_filename)
     with open(mission_path) as f:
         mission_context = f.read()
 
