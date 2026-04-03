@@ -66,6 +66,18 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "gateway": {
+        "test": "molecule/default/tests/test_gateway.py",
+        "student_files": [
+            "workspace/site.yml",
+            "workspace/RECON.md",
+            "workspace/inventory/hosts.yml",
+            "workspace/inventory/group_vars/all.yml",
+            "workspace/inventory/group_vars/debian.yml",
+            "workspace/inventory/group_vars/redhat.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
 }
 
 
