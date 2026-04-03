@@ -78,6 +78,14 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "2-1": {
+        "test": "molecule/default/tests/test_wht.py",
+        "student_files": [
+            "workspace/obstacle-course/mission-1/site.yml",
+            "workspace/obstacle-course/mission-2/site.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
 }
 
 
