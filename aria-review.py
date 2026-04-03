@@ -95,6 +95,15 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "2-3": {
+        "test": "molecule/default/tests/test_fleet_sync.py",
+        "student_files": [
+            "workspace/rolling-update.yml",
+            "workspace/site.yml",
+            "workspace/inventory/hosts.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
 }
 
 
