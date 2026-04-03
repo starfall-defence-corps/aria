@@ -104,6 +104,13 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "2-4": {
+        "test": "molecule/default/tests/test_pipeline.py",
+        "student_files": [
+            "workspace/main-mission/PIPELINE.md",
+            "workspace/ansible.cfg",
+        ],
+    },
 }
 
 
