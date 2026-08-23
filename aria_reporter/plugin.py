@@ -104,6 +104,82 @@ def _shields_escape(text):
     return text.replace("-", "--").replace("_", "__").replace(" ", "_")
 
 
+# ---------------------------------------------------------------------------
+# Intel fragments (#47). Every phase a cadet *completes* (all its checks green)
+# decrypts one short story fragment. Read in order across Module 1 (missions 0
+# and 1-1..1-5), the fragments assemble the exact picture the Gateway
+# Simulation opens with: a Voidborn-boarded forward observation post at
+# 172.31.0.0/24. Deficient/partial phases decrypt nothing — a reason to finish
+# every phase, not just enough to pass. Keyed {mission_id: {phase_num: text}}.
+# Missions with no entry simply emit no intel (graceful).
+# ---------------------------------------------------------------------------
+
+INTEL = {
+    # Prologue — the listening post comes online.
+    "0": {
+        "1": "SDC listening post online. Static clears — something is transmitting on a channel that should be dead.",
+        "2": "The fragments carry one tag: VOIDBORN. Command opens a case file and clears you for intel access.",
+    },
+    # 1-1 Fleet Census — learning to see the enemy.
+    "1-1": {
+        "1": "First intercept decoded. The Voidborn keep a ledger of every ship they have boarded. An SDC frontier node is on it.",
+        "2": "Traffic analysis: a raider cell is pinging our frontier, quietly mapping which nodes still answer.",
+        "3": "Their probes gather facts before they strike — OS, open ports, users. The same reconnaissance you just ran.",
+        "4": "A calling card surfaces in the wreckage: files left world-writable, chmod 777. The signature of Saboteur Chmod-777.",
+        "5": "Filtered from the noise, one name sits atop every order the cell receives: Dread Admiral Snowflake.",
+    },
+    # 1-2 Lock the Door — how they get in.
+    "1-2": {
+        "1": "Captured Voidborn orders read like playbooks — numbered, repeatable, run against many ships in one pass.",
+        "2": "They rehearse each boarding dry before committing a single trooper. This is discipline, not a rabble.",
+        "3": "Breach method confirmed: Warlord Hardcoded-Password simply walks through doors left unlocked — open SSH, root login permitted.",
+        "4": "Their foothold re-runs clean, leaving no second trace. Whatever we harden, we must harden so it stays hardened.",
+    },
+    # 1-3 Clean Sweep — the second column.
+    "1-3": {
+        "1": "Fresh orders intercepted. A second raider column is forming up behind the first.",
+        "2": "Corsair Unpatched preys on what defenders forget — stale packages and dead services nobody bothered to remove.",
+        "3": "Where firewalls sleep, the Voidborn pour through. Three frontier posts are reporting their firewalls down.",
+        "4": "Decrypt: they hunt unhardened kernels, the soft underbelly of any node rushed into service unprepared.",
+        "5": "Confirmed — their foothold self-repairs overnight. A one-time fix will not hold this line.",
+    },
+    # 1-4 Many Ships — they scale up.
+    "1-4": {
+        "1": "Scale intercept: the raiders have stopped striking one ship at a time. Now they take whole fleets in a single order.",
+        "2": "Their orders adapt per target — Ubuntu here, Rocky there — one plan reshaped to fit many hulls.",
+        "3": "Reaver YOLO-Deploy ships fast and mixed-OS on purpose, betting we cannot defend both fronts at once.",
+        "4": "A frontier sector falls silent. Its last transmission: firewalls overwhelmed clear across the line.",
+        "5": "The silent sector's configuration keeps drifting back open. Something re-breaks it every night.",
+    },
+    # 1-5 Clean House — the picture resolves, and hands off to Gateway.
+    "1-5": {
+        "1": "Marauder Copy-Paste's weakness is plain: their tactics are stolen and brittle. Ours will be roles — clean, reusable, ours.",
+        "2": "The final decrypt needs a key. SDC cryptographers open the Vault, and the last of the picture resolves.",
+        "3": "It assembles: a forward observation post — three nodes — already boarded. SSH wide open, secrets sitting on disk.",
+        "4": "Coordinates locked: 172.31.0.0/24. The post is a liability and still bleeding. Command cuts a Gateway tasking — Operation First Contact.",
+    },
+}
+
+
+def _intel_for(mission_id, completed_nums):
+    """Return [(num, fragment)] for completed phases with intel, phase-ordered.
+
+    completed_nums is the list of phase-number strings whose every check passed.
+    Fragments for deficient or partial phases are intentionally withheld.
+    """
+    table = INTEL.get(mission_id)
+    if not table:
+        return []
+    def _key(n):
+        return (0, int(n)) if n.isdigit() else (1, n)
+    out = []
+    for num in sorted(set(completed_nums), key=_key):
+        frag = table.get(num)
+        if frag:
+            out.append((num, frag))
+    return out
+
+
 def _badge_block(mission_id):
     """Return the markdown badge lines for a fully-completed mission, or None."""
     rank = RANK_BY_MISSION.get(mission_id)
@@ -223,6 +299,27 @@ class _ARIAReporter:
             f"  {p['BOLD']}Results:{p['RESET']} {' · '.join(segs)}"
             f"  {p['DIM']}({total} checks){p['RESET']}\n"
         )
+
+        # #47 — decrypt one intel fragment per fully-completed phase, in phase
+        # order. Partial/deficient phases decrypt nothing (a reason to finish
+        # every phase). Missions without an INTEL entry emit no block.
+        completed_nums = [
+            _CONFIG["phases"].get(cls, ("?", ""))[0]
+            for cls, passed in self._phase_results.items()
+            if passed
+        ]
+        fragments = _intel_for(_CONFIG.get("mission_id"), completed_nums)
+        if fragments:
+            self._out(f"\n  {p['CYAN']}{p['BOLD']}📡 DECRYPTED INTEL{p['RESET']}\n")
+            for num, frag in fragments:
+                self._out(f"    {p['DIM']}[{num}]{p['RESET']} {frag}\n")
+            total_intel = len(INTEL.get(_CONFIG.get("mission_id"), {}))
+            if len(fragments) < total_intel:
+                locked = total_intel - len(fragments)
+                self._out(
+                    f"    {p['DIM']}…{locked} fragment(s) still encrypted — "
+                    f"clear every phase to decrypt them.{p['RESET']}\n"
+                )
 
         # #48 — rank + shareable badges, only on a fully-completed mission
         # (every phase green, nothing deficient). Incomplete runs are unchanged.

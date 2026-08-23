@@ -200,3 +200,104 @@ class TestUnmapped:
     # unmapped test name shown raw
     assert "test_unmapped" in err
     assert result.ret == 0
+
+
+# --- #47 intel fragments -------------------------------------------------
+
+# mission "0" has exactly two intel fragments (phase nums 1 and 2), so a
+# two-phase run either fully decrypts it or not — ideal for these tests.
+INTEL0_CONFTEST = '''
+from aria_reporter import configure
+configure(
+    phases={"TestCommsCheck": ("1", "Comms Check"), "TestDutyReport": ("2", "Report In")},
+    friendly={"test_a": "A", "test_b": "B"},
+    mission_id="0",
+)
+'''
+
+
+def test_intel_decrypts_every_completed_phase(pytester):
+    result = _run(pytester, '''
+class TestCommsCheck:
+    def test_a(self): assert True
+class TestDutyReport:
+    def test_b(self): assert True
+''', conftest=INTEL0_CONFTEST)
+    err = result.stderr.str()
+    assert "DECRYPTED INTEL" in err
+    assert "SDC listening post online" in err          # fragment [1]
+    assert "clears you for intel access" in err         # fragment [2]
+    # all fragments earned -> no "still encrypted" nag
+    assert "still encrypted" not in err
+    assert result.ret == 0
+
+
+def test_intel_withholds_fragments_for_deficient_phases(pytester):
+    result = _run(pytester, '''
+class TestCommsCheck:
+    def test_a(self): assert True
+class TestDutyReport:
+    def test_b(self): assert False, "ARIA: nope"
+''', conftest=INTEL0_CONFTEST)
+    err = result.stderr.str()
+    # completed phase 1 decrypts; deficient phase 2 does not
+    assert "SDC listening post online" in err
+    assert "clears you for intel access" not in err
+    assert "still encrypted" in err
+
+
+def test_intel_fragments_render_in_phase_order(pytester):
+    # declare the phase-2 class first; output must still list [1] before [2]
+    result = _run(pytester, '''
+class TestDutyReport:
+    def test_b(self): assert True
+class TestCommsCheck:
+    def test_a(self): assert True
+''', conftest=INTEL0_CONFTEST)
+    err = result.stderr.str()
+    assert err.index("SDC listening post online") < err.index("clears you for intel access")
+
+
+def test_no_intel_block_for_mission_without_fragments(pytester):
+    conftest = INTEL0_CONFTEST.replace('mission_id="0"', 'mission_id="2-1"')
+    result = _run(pytester, '''
+class TestCommsCheck:
+    def test_a(self): assert True
+class TestDutyReport:
+    def test_b(self): assert True
+''', conftest=conftest)
+    err = result.stderr.str()
+    assert "DECRYPTED INTEL" not in err
+    assert result.ret == 0
+
+
+def test_module1_arc_hands_off_to_gateway(pytester):
+    # The 1-5 finale fragment must carry the exact hand-off the Gateway
+    # briefing opens with: the 172.31.0.0/24 forward post + First Contact.
+    conftest = '''
+from aria_reporter import configure
+configure(
+    phases={
+        "TestRoleStructure": ("1", "Role Structure"),
+        "TestVault": ("2", "Vault"),
+        "TestRoleApplied": ("3", "Role Deployment"),
+        "TestIdempotency": ("4", "Idempotency"),
+    },
+    friendly={},
+    mission_id="1-5",
+)
+'''
+    result = _run(pytester, '''
+class TestRoleStructure:
+    def test_1(self): assert True
+class TestVault:
+    def test_2(self): assert True
+class TestRoleApplied:
+    def test_3(self): assert True
+class TestIdempotency:
+    def test_4(self): assert True
+''', conftest=conftest)
+    err = result.stderr.str()
+    assert "172.31.0.0/24" in err
+    assert "Operation First Contact" in err
+    assert "forward observation post" in err
