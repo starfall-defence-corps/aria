@@ -197,6 +197,16 @@ def _badge_block(mission_id):
     return rank, f"{rank_badge} {mission_badge}"
 
 
+def reward_for(mission_id):
+    """Public: ``(rank, badge_markdown)`` for a mission, or ``None`` if unknown.
+
+    Same data the make-test summary emits on full completion (#48). Exposed so
+    the CI review (``aria-review.py``) can surface the rank/badge in the PR
+    review from a single source of truth — no duplicated badge strings.
+    """
+    return _badge_block(mission_id)
+
+
 # ---------------------------------------------------------------------------
 # Colour (honours ARIA_COLOR=1, else auto-detects a tty)
 # ---------------------------------------------------------------------------

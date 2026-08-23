@@ -129,6 +129,31 @@ MISSION_MAP = {
 }
 
 
+def _render_reward(mission_id):
+    """#48 — the rank/badge block for this mission, for the PR review.
+
+    Pulls from the installed aria_reporter plugin (single source of truth with
+    the make-test emission). Returns markdown, or "" if the package is absent
+    or the mission is unknown. Shown as copy-paste-ready text: the cadet earns
+    the rank by getting all phases green in `make test`, then lifts these
+    badges into their repo README (where they render).
+    """
+    try:
+        from aria_reporter import reward_for
+    except Exception:
+        return ""
+    reward = reward_for(mission_id)
+    if not reward:
+        return ""
+    rank, badges = reward
+    return (
+        "\n\n## Rank & Badge\n\n"
+        f"Complete this mission — all phases green in `make test` — to earn the "
+        f"rank of {rank}. Add these badges to your repo README:\n\n"
+        f"{badges}\n"
+    )
+
+
 def _mission_root(mission_root_override=None):
     """Return the mission repo root directory."""
     if mission_root_override:
@@ -329,6 +354,15 @@ def main():
                 print("  Deterministic test results remain valid.")
             print("----------------------------------------------")
 
+    # #48 — rank/badge block for this mission, surfaced in the PR review.
+    reward_md = _render_reward(args.mission)
+    if reward_md:
+        print()
+        print("==============================================")
+        print("  RANK & BADGE")
+        print("==============================================")
+        print(reward_md)
+
     # Write to file if requested (for GitHub Actions)
     if args.output:
         with open(args.output, "w") as f:
@@ -336,6 +370,8 @@ def main():
             if review_text:
                 f.write("\n\n## ARIA QUALITATIVE REVIEW\n\n")
                 f.write(review_text)
+            if reward_md:
+                f.write(reward_md)
 
     # Final banner and exit
     print()

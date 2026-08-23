@@ -177,6 +177,20 @@ def test_shields_escape_handles_spaces_and_dashes():
     assert _shields_escape("Defence-in Depth") == "Defence--in_Depth"
 
 
+def test_reward_for_public_helper():
+    # #48 — public API used by aria-review.py to surface the badge in the PR
+    # review from the same data the make-test summary emits.
+    from aria_reporter import reward_for
+    rank, md = reward_for("2-6")
+    assert rank == "Lieutenant"
+    assert "img.shields.io/badge/SDC_Rank-Lieutenant-navy" in md
+    assert "Mission_2.6-Counterattack-brightgreen" in md
+    # capstone earns Lieutenant Commander
+    assert reward_for("master")[0] == "Lieutenant Commander"
+    # unknown mission -> None (aria-review.py renders nothing)
+    assert reward_for("does-not-exist") is None
+
+
 def test_master_earns_lieutenant_commander(pytester):
     conftest = BADGE_CONFTEST.replace('mission_id="2-6"', 'mission_id="master", unit="Mission"')
     result = _run(pytester, '''
