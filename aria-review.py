@@ -112,6 +112,28 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "2-5": {
+        "test": "molecule/default/tests/",
+        "student_files": [
+            "workspace/site.yml",
+            "workspace/collect-triage.yml",
+            "workspace/block-ioc.yml",
+            "workspace/roles/hardening/tasks/main.yml",
+            "workspace/roles/defense/tasks/main.yml",
+            "workspace/roles/observability/tasks/main.yml",
+            "workspace/inventory/hosts.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
+    "2-6": {
+        "test": "molecule/default/tests/test_counterattack.py",
+        "student_files": [
+            "workspace/triage.yml",
+            "workspace/eradicate.yml",
+            "workspace/inventory/hosts.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
     "master": {
         "test": "molecule/default/tests/test_iron_curtain.py",
         "context_file": "master-simulation.md",
