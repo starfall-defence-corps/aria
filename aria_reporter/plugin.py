@@ -40,19 +40,25 @@ _CONFIG = {
     "phases": {},      # {ExactTestClassName: (num, label)}
     "friendly": {},    # {exact_test_func_name: human label}
     "mission_id": None,
+    "unit": "Phase",   # segment noun: "Phase" for missions, "Mission" for capstones
 }
 
 
-def configure(phases=None, friendly=None, mission_id=None):
+def configure(phases=None, friendly=None, mission_id=None, unit="Phase"):
     """Activate the ARIA reporter for this mission's test session.
 
     phases    -- maps each test-class name to a ``(number, label)`` pair.
     friendly  -- maps each test-function name to a human-readable objective.
     mission_id-- e.g. "2-6" (stored for downstream rank/badge/intel features).
+    unit      -- singular noun for a segment: "Phase" (default, used by the
+                 numbered missions) or "Mission" (the gateway/master capstones,
+                 which group work into "Mission 1/2/3"). The plural in the
+                 progress line is derived as ``unit.lower() + "s"``.
     """
     _CONFIG["phases"] = dict(phases or {})
     _CONFIG["friendly"] = dict(friendly or {})
     _CONFIG["mission_id"] = mission_id
+    _CONFIG["unit"] = unit or "Phase"
     _CONFIG["active"] = True
     _reporter.reset()
 
@@ -115,7 +121,7 @@ class _ARIAReporter:
                 self._phase_results[self._current_class] = self._current_phase_passed
             self._current_phase_passed = True
             self._current_class = cls
-            self._out(f"\n  {p['CYAN']}{p['BOLD']}Phase {num}: {label}{p['RESET']}\n")
+            self._out(f"\n  {p['CYAN']}{p['BOLD']}{_CONFIG['unit']} {num}: {label}{p['RESET']}\n")
 
         if outcome != "passed":
             self._current_phase_passed = False
@@ -145,7 +151,8 @@ class _ARIAReporter:
 
         phases_complete = sum(1 for v in self._phase_results.values() if v)
         total_phases = len(_CONFIG["phases"])
-        self._out(f"  {p['BOLD']}Progress:{p['RESET']} {phases_complete} of {total_phases} phases complete\n")
+        plural = _CONFIG["unit"].lower() + "s"
+        self._out(f"  {p['BOLD']}Progress:{p['RESET']} {phases_complete} of {total_phases} {plural} complete\n")
 
         segs = []
         if self.passed:

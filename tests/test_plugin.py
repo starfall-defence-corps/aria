@@ -101,6 +101,27 @@ def test_plain(): assert True
     assert result.ret == 0
 
 
+def test_unit_noun_configurable_for_capstones(pytester):
+    conftest = '''
+from aria_reporter import configure
+configure(
+    phases={"TestPhaseOne": ("1", "Recon")},
+    friendly={"test_a": "Objective A"},
+    mission_id="gateway",
+    unit="Mission",
+)
+'''
+    result = _run(pytester, '''
+class TestPhaseOne:
+    def test_a(self): assert True
+''', conftest=conftest)
+    err = result.stderr.str()
+    assert "Mission 1: Recon" in err
+    assert "1 of 1 missions complete" in err
+    assert "Phase 1" not in err
+    assert result.ret == 0
+
+
 def test_unknown_class_and_test_fall_back_gracefully(pytester):
     result = _run(pytester, '''
 class TestUnmapped:
