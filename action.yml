@@ -36,7 +36,10 @@ runs:
 
     - name: Install ARIA dependencies
       shell: bash
-      run: pip install anthropic
+      # Install the aria_reporter package from this action's own checkout so
+      # aria-review.py can render the #48 rank/badge from a single source of
+      # truth (the same data the make-test summary emits). Inert in review.
+      run: pip install anthropic "${{ github.action_path }}"
 
     - name: Install mission dependencies
       if: inputs.skip-tests != 'true'
