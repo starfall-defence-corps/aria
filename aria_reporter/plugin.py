@@ -271,6 +271,119 @@ def _elapsed_min_from_env():
 
 
 # ---------------------------------------------------------------------------
+# Exercise scoring engine (#56). A host-side poller (scripts/score-poller.sh,
+# started by `make setup` on the capstones) TCP-probes each scored node's
+# published SSH port every few seconds and appends a JSONL availability log:
+#
+#     {"t": 1690000000, "up": {"sdc-fwd-web": 1, "sdc-fwd-db": 1, ...}}
+#
+# At `make test`, the log path is handed to the plugin via ARIA_SCORE_LOG. This
+# mirrors a real cyber-exercise scoring engine: service availability over the
+# whole run is measured, not just a point-in-time check. The composite exercise
+# score blends that availability with objective completion (phases green), so a
+# fast run that dropped the scored service scores worse than a steady one.
+# ---------------------------------------------------------------------------
+
+# Composite score (0–100) -> rating band. First band whose floor is met wins.
+SCORE_BANDS = [
+    (95, "Flawless"), (85, "Distinguished"), (70, "Qualified"),
+    (50, "Passed"), (0, "Insufficient"),
+]
+
+# Composite weighting: availability vs objective completion.
+_AVAIL_WEIGHT = 0.5
+_OBJECTIVE_WEIGHT = 0.5
+
+
+def _load_score_samples(log_path):
+    """Parse the JSONL availability log into a list of ``up`` dicts (per node
+    1/0). Malformed or blank lines are skipped; a missing file yields []."""
+    import json
+    samples = []
+    try:
+        with open(log_path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                up = rec.get("up")
+                if isinstance(up, dict) and up:
+                    samples.append({k: (1 if v else 0) for k, v in up.items()})
+    except (OSError, IOError):
+        return []
+    return samples
+
+
+def _availability(samples):
+    """Return (overall_pct, per_node_pct, longest_outage) for the run.
+
+    overall_pct is the mean of every (node, sample) reachability check.
+    longest_outage is the largest run of consecutive samples in which *any*
+    scored node was down (a proxy for the worst service dip)."""
+    if not samples:
+        return None, {}, 0
+    nodes = sorted({n for s in samples for n in s})
+    per_node = {}
+    for n in nodes:
+        seen = [s[n] for s in samples if n in s]
+        per_node[n] = round(100.0 * sum(seen) / len(seen), 1) if seen else 0.0
+
+    total_checks = sum(len(s) for s in samples)
+    total_up = sum(v for s in samples for v in s.values())
+    overall = round(100.0 * total_up / total_checks, 1) if total_checks else None
+
+    longest = cur = 0
+    for s in samples:
+        if any(v == 0 for v in s.values()):
+            cur += 1
+            longest = max(longest, cur)
+        else:
+            cur = 0
+    return overall, per_node, longest
+
+
+def _rate_score(score):
+    """Map a composite 0–100 score to its rating band."""
+    for floor, label in SCORE_BANDS:
+        if score >= floor:
+            return label
+    return SCORE_BANDS[-1][1]
+
+
+def score_summary(log_path, objective_ratio=None):
+    """Public: compute the exercise score from an availability log.
+
+    Returns a dict {availability, per_node, longest_outage, objective_pct,
+    composite, rating, samples} or None if the log has no usable samples.
+    ``objective_ratio`` is phases_complete / total_phases (0..1)."""
+    samples = _load_score_samples(log_path)
+    if not samples:
+        return None
+    overall, per_node, longest = _availability(samples)
+    if overall is None:
+        return None
+    obj_pct = None if objective_ratio is None else round(100.0 * objective_ratio, 1)
+    if obj_pct is None:
+        composite = round(overall)
+    else:
+        composite = round(_AVAIL_WEIGHT * overall + _OBJECTIVE_WEIGHT * obj_pct)
+    composite = max(0, min(100, composite))
+    return {
+        "availability": overall,
+        "per_node": per_node,
+        "longest_outage": longest,
+        "objective_pct": obj_pct,
+        "composite": composite,
+        "rating": _rate_score(composite),
+        "samples": len(samples),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Colour (honours ARIA_COLOR=1, else auto-detects a tty)
 # ---------------------------------------------------------------------------
 
@@ -427,6 +540,34 @@ class _ARIAReporter:
                         f"clock){p['RESET']}\n"
                     )
                     self._out(f"  {p['DIM']}{_tier_table(mid)}{p['RESET']}\n")
+
+        # #56 — exercise score from the availability poller. Shown for capstones
+        # whenever ARIA_SCORE_LOG points at a log with samples — live, on every
+        # run, not just at completion (the score IS the during-the-run metric).
+        mid = _CONFIG.get("mission_id")
+        score_log = os.environ.get("ARIA_SCORE_LOG", "").strip()
+        if mid in TIERS and score_log:
+            obj_ratio = (phases_complete / total_phases) if total_phases else None
+            score = score_summary(score_log, obj_ratio)
+            if score:
+                self._out(
+                    f"\n  {p['CYAN']}{p['BOLD']}📊  Exercise score: "
+                    f"{score['composite']}/100 — {score['rating']}{p['RESET']}\n"
+                )
+                detail = (
+                    f"service availability {score['availability']}%  ·  "
+                    f"objectives {phases_complete}/{total_phases}  ·  "
+                    f"{score['samples']} polls"
+                )
+                if score["longest_outage"]:
+                    detail += f"  ·  longest dip {score['longest_outage']} polls"
+                self._out(f"  {p['DIM']}{detail}{p['RESET']}\n")
+                worst = [n for n, pct in score["per_node"].items() if pct < 100.0]
+                if worst:
+                    downs = ", ".join(
+                        f"{n} {score['per_node'][n]}%" for n in sorted(worst)
+                    )
+                    self._out(f"  {p['DIM']}nodes with downtime: {downs}{p['RESET']}\n")
 
 
 def _extract_hint(longrepr):
