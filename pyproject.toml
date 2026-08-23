@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aria-reporter"
+version = "0.1.0"
+description = "Shared ARIA test reporter for SDC Academy missions"
+readme = "aria_reporter/README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = ["pytest>=8.0"]
+
+[project.urls]
+Homepage = "https://github.com/starfall-defence-corps/aria"
+
+# Auto-registers as a pytest plugin on install; inert until configure() is called.
+[project.entry-points.pytest11]
+aria_reporter = "aria_reporter.plugin"
+
+[tool.setuptools]
+packages = ["aria_reporter"]

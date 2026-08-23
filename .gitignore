@@ -17,3 +17,8 @@ venv/
 .idea/
 .vscode/
 *.swp
+
+# Packaging / test artifacts
+.venv/
+*.egg-info/
+.pytest_cache/

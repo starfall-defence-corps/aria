@@ -1,0 +1,222 @@
+"""
+ARIA shared test reporter — SDC Academy
+=======================================
+A pytest plugin that renders a cadet-facing, phase-oriented summary of a
+mission's verification run (``✓ / ✗ / ○`` per objective, grouped by phase,
+with a "N of M phases complete" progress line).
+
+It was previously copy-pasted verbatim into every mission's
+``molecule/default/tests/conftest.py``; that duplication had already drifted
+(older missions lacked the all-skip → exit-2 safeguard, one mission used
+unicode escapes). This is the single canonical home. Missions opt in with::
+
+    # molecule/default/tests/conftest.py
+    from aria_reporter import configure
+    configure(
+        phases={"TestPhase1Triage": ("1", "Triage the Fleet"), ...},
+        friendly={"test_triage_report_generated": "…", ...},
+        mission_id="2-6",
+    )
+
+The plugin is INERT until ``configure()`` is called — with no configuration it
+does not touch pytest's output or exit code, so installing it never disturbs
+unrelated pytest runs (including this repo's own test suite).
+
+Emission point for downstream gamification (#47 intel fragments, #48 rank/
+badges, #50 tiers): the reporter already tracks per-phase pass/fail and
+verified/deficient/skipped counts — those features render from ``summary()``.
+"""
+import os
+import sys
+
+import pytest
+
+# ---------------------------------------------------------------------------
+# Per-mission configuration (populated by configure())
+# ---------------------------------------------------------------------------
+
+_CONFIG = {
+    "active": False,
+    "phases": {},      # {ExactTestClassName: (num, label)}
+    "friendly": {},    # {exact_test_func_name: human label}
+    "mission_id": None,
+}
+
+
+def configure(phases=None, friendly=None, mission_id=None):
+    """Activate the ARIA reporter for this mission's test session.
+
+    phases    -- maps each test-class name to a ``(number, label)`` pair.
+    friendly  -- maps each test-function name to a human-readable objective.
+    mission_id-- e.g. "2-6" (stored for downstream rank/badge/intel features).
+    """
+    _CONFIG["phases"] = dict(phases or {})
+    _CONFIG["friendly"] = dict(friendly or {})
+    _CONFIG["mission_id"] = mission_id
+    _CONFIG["active"] = True
+    _reporter.reset()
+
+
+# ---------------------------------------------------------------------------
+# Colour (honours ARIA_COLOR=1, else auto-detects a tty)
+# ---------------------------------------------------------------------------
+
+def _color_enabled():
+    return (
+        os.environ.get("ARIA_COLOR") == "1"
+        or (hasattr(sys.stderr, "isatty") and sys.stderr.isatty())
+    )
+
+
+def _c(code):
+    return code if _color_enabled() else ""
+
+
+def _palette():
+    return {
+        "GREEN": _c("\033[32m"), "RED": _c("\033[31m"),
+        "YELLOW": _c("\033[33m"), "CYAN": _c("\033[36m"),
+        "DIM": _c("\033[2m"), "BOLD": _c("\033[1m"), "RESET": _c("\033[0m"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Reporter
+# ---------------------------------------------------------------------------
+
+class _ARIAReporter:
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self._current_class = None
+        self.passed = 0
+        self.failed = 0
+        self.skipped = 0
+        self._phase_results = {}
+        self._current_phase_passed = True
+
+    @staticmethod
+    def _out(text):
+        sys.stderr.write(text)
+        sys.stderr.flush()
+
+    def record(self, nodeid, outcome, longrepr):
+        p = _palette()
+        parts = nodeid.split("::")
+        cls = parts[1] if len(parts) > 1 else ""
+        test = parts[-1]
+
+        num, label = _CONFIG["phases"].get(cls, ("?", "Unknown"))
+        name = _CONFIG["friendly"].get(test, test)
+
+        if cls != self._current_class:
+            if self._current_class is not None:
+                self._phase_results[self._current_class] = self._current_phase_passed
+            self._current_phase_passed = True
+            self._current_class = cls
+            self._out(f"\n  {p['CYAN']}{p['BOLD']}Phase {num}: {label}{p['RESET']}\n")
+
+        if outcome != "passed":
+            self._current_phase_passed = False
+
+        if outcome == "passed":
+            self.passed += 1
+            self._out(f"    {p['GREEN']}✓{p['RESET']} {name}\n")
+        elif outcome == "skipped":
+            self.skipped += 1
+            self._out(f"    {p['YELLOW']}○{p['RESET']} {p['DIM']}{name} — skipped{p['RESET']}\n")
+        else:
+            self.failed += 1
+            hint = _extract_hint(longrepr)
+            if hint:
+                self._out(f"    {p['YELLOW']}✗{p['RESET']} {name}\n")
+                self._out(f"      {p['DIM']}↳ {hint}{p['RESET']}\n")
+            else:
+                self._out(f"    {p['RED']}✗{p['RESET']} {name}\n")
+
+    def summary(self):
+        p = _palette()
+        if self._current_class is not None:
+            self._phase_results[self._current_class] = self._current_phase_passed
+
+        total = self.passed + self.failed + self.skipped
+        self._out(f"\n  {'─' * 44}\n")
+
+        phases_complete = sum(1 for v in self._phase_results.values() if v)
+        total_phases = len(_CONFIG["phases"])
+        self._out(f"  {p['BOLD']}Progress:{p['RESET']} {phases_complete} of {total_phases} phases complete\n")
+
+        segs = []
+        if self.passed:
+            segs.append(f"{p['GREEN']}{self.passed} verified{p['RESET']}")
+        if self.failed:
+            segs.append(f"{p['RED']}{self.failed} deficient{p['RESET']}")
+        if self.skipped:
+            segs.append(f"{p['YELLOW']}{self.skipped} skipped{p['RESET']}")
+        self._out(
+            f"  {p['BOLD']}Results:{p['RESET']} {' · '.join(segs)}"
+            f"  {p['DIM']}({total} checks){p['RESET']}\n"
+        )
+
+
+def _extract_hint(longrepr):
+    """Pull an ``assert cond, 'ARIA: <hint>'`` message out of a failure."""
+    if longrepr is None:
+        return None
+    crash = getattr(longrepr, "reprcrash", None)
+    if crash:
+        msg = getattr(crash, "message", "")
+        if "ARIA:" in msg:
+            return msg.split("ARIA:", 1)[-1].strip()
+    text = str(longrepr)
+    if "ARIA:" in text:
+        raw = text.split("ARIA:")[-1].splitlines()[0].strip()
+        return raw.rstrip("'\"")
+    return None
+
+
+_reporter = _ARIAReporter()
+
+
+# ---------------------------------------------------------------------------
+# pytest hooks — all no-op unless configure() has been called
+# ---------------------------------------------------------------------------
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_logreport(report):
+    if not _CONFIG["active"]:
+        return
+    if report.when == "call":
+        _reporter.record(report.nodeid, report.outcome, report.longrepr)
+        report.longrepr = None
+    elif report.when == "setup" and report.skipped:
+        _reporter.record(report.nodeid, "skipped", report.longrepr)
+        report.longrepr = None
+
+
+def pytest_report_teststatus(report, config):
+    if not _CONFIG["active"]:
+        return None
+    if report.when == "call":
+        return report.outcome, "", ""
+    if report.when == "setup" and report.skipped:
+        return "skipped", "", ""
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    if not _CONFIG["active"]:
+        return
+    _reporter.summary()
+    terminalreporter.stats.pop("failed", None)
+    terminalreporter.stats.pop("error", None)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    # An all-skipped run (range unarmed / already clean) is INCONCLUSIVE, not a
+    # pass — force a non-zero exit so `make test` never reports COMPLETE for it.
+    # (Canonicalised from mission-2-6; older missions lacked this safeguard.)
+    if not _CONFIG["active"]:
+        return
+    if _reporter.passed == 0 and _reporter.failed == 0 and _reporter.skipped > 0:
+        session.exitstatus = 2
