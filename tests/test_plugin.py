@@ -272,6 +272,131 @@ class TestHardening:
     assert "Rank earned" not in err
 
 
+# --- #56 exercise scoring engine ------------------------------------------
+
+import json as _json
+
+
+def _write_score_log(tmp_path, samples):
+    p = tmp_path / "score.jsonl"
+    p.write_text("\n".join(_json.dumps({"t": i, "up": s}) for i, s in enumerate(samples)))
+    return str(p)
+
+
+def test_score_all_up_is_flawless(tmp_path):
+    from aria_reporter import score_summary
+    log = _write_score_log(tmp_path, [{"a": 1, "b": 1}, {"a": 1, "b": 1}])
+    s = score_summary(log, objective_ratio=1.0)
+    assert s["availability"] == 100.0
+    assert s["composite"] == 100
+    assert s["rating"] == "Flawless"
+    assert s["samples"] == 2
+    assert s["longest_outage"] == 0
+
+
+def test_score_downtime_lowers_availability(tmp_path):
+    from aria_reporter import score_summary
+    # node b down in 2 of 4 samples -> b 50%, overall (4+2)/8 = 75%
+    log = _write_score_log(tmp_path, [
+        {"a": 1, "b": 1}, {"a": 1, "b": 0}, {"a": 1, "b": 0}, {"a": 1, "b": 1},
+    ])
+    s = score_summary(log, objective_ratio=1.0)
+    assert s["per_node"]["b"] == 50.0
+    assert s["per_node"]["a"] == 100.0
+    assert s["availability"] == 75.0
+    # composite = 0.5*75 + 0.5*100 = 87.5 -> 88 -> Distinguished
+    assert s["composite"] == 88
+    assert s["rating"] == "Distinguished"
+    assert s["longest_outage"] == 2
+
+
+def test_score_composite_without_objective_is_availability(tmp_path):
+    from aria_reporter import score_summary
+    log = _write_score_log(tmp_path, [{"a": 1}, {"a": 0}])
+    s = score_summary(log)          # no objective_ratio
+    assert s["composite"] == 50
+    assert s["objective_pct"] is None
+
+
+def test_score_none_for_missing_or_empty(tmp_path):
+    from aria_reporter import score_summary
+    assert score_summary(str(tmp_path / "nope.jsonl")) is None
+    empty = tmp_path / "e.jsonl"
+    empty.write_text("\n\n")
+    assert score_summary(str(empty)) is None
+
+
+def test_score_skips_malformed_lines(tmp_path):
+    from aria_reporter import score_summary
+    p = tmp_path / "m.jsonl"
+    p.write_text('{"t":1,"up":{"a":1}}\nGARBAGE\n{"t":2,"up":{"a":0}}\n{"noup":true}\n')
+    s = score_summary(p.as_posix(), objective_ratio=1.0)
+    assert s["samples"] == 2
+    assert s["per_node"]["a"] == 50.0
+
+
+def test_rate_score_bands():
+    from aria_reporter.plugin import _rate_score
+    assert _rate_score(100) == "Flawless"
+    assert _rate_score(95) == "Flawless"
+    assert _rate_score(94) == "Distinguished"
+    assert _rate_score(70) == "Qualified"
+    assert _rate_score(50) == "Passed"
+    assert _rate_score(49) == "Insufficient"
+    assert _rate_score(0) == "Insufficient"
+
+
+def test_capstone_emits_exercise_score(pytester, tmp_path, monkeypatch):
+    log = tmp_path / "score.jsonl"
+    log.write_text("\n".join(
+        _json.dumps({"t": i, "up": {"sdc-fwd-web": 1, "sdc-fwd-db": 1}})
+        for i in range(5)
+    ))
+    monkeypatch.setenv("ARIA_SCORE_LOG", str(log))
+    result = _run(pytester, GATEWAY_PASS, conftest=GATEWAY_CONFTEST)
+    err = result.stderr.str()
+    assert "Exercise score: 100/100 — Flawless" in err
+    assert "service availability 100.0%" in err
+    assert "objectives 2/2" in err
+
+
+def test_exercise_score_shown_even_when_incomplete(pytester, tmp_path, monkeypatch):
+    # The score is a during-the-run metric — shown even before all phases pass.
+    log = tmp_path / "s.jsonl"
+    log.write_text("\n".join(_json.dumps({"t": i, "up": {"n": 1}}) for i in range(4)))
+    monkeypatch.setenv("ARIA_SCORE_LOG", str(log))
+    result = _run(pytester, '''
+class TestReconnaissance:
+    def test_a(self): assert True
+class TestHardening:
+    def test_b(self): assert False, "ARIA: nope"
+''', conftest=GATEWAY_CONFTEST)
+    err = result.stderr.str()
+    assert "Exercise score:" in err
+    assert "objectives 1/2" in err     # availability 100 + objective 50 -> 75
+    assert "Qualified" in err
+    assert "Rank earned" not in err     # but no rank/tier — not complete
+
+
+def test_no_exercise_score_for_non_capstone(pytester, tmp_path, monkeypatch):
+    log = tmp_path / "score.jsonl"
+    log.write_text('{"t":1,"up":{"a":1}}\n')
+    monkeypatch.setenv("ARIA_SCORE_LOG", str(log))
+    result = _run(pytester, '''
+class TestPhaseOne:
+    def test_a(self): assert True
+class TestPhaseTwo:
+    def test_b(self): assert True
+''', conftest=BADGE_CONFTEST)          # mission 2-6, not in TIERS
+    assert "Exercise score" not in result.stderr.str()
+
+
+def test_no_exercise_score_without_log_env(pytester, monkeypatch):
+    monkeypatch.delenv("ARIA_SCORE_LOG", raising=False)
+    result = _run(pytester, GATEWAY_PASS, conftest=GATEWAY_CONFTEST)
+    assert "Exercise score" not in result.stderr.str()
+
+
 def test_reward_for_public_helper():
     # #48 — public API used by aria-review.py to surface the badge in the PR
     # review from the same data the make-test summary emits.
