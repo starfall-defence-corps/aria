@@ -122,6 +122,74 @@ class TestPhaseOne:
     assert result.ret == 0
 
 
+BADGE_CONFTEST = '''
+from aria_reporter import configure
+configure(
+    phases={"TestPhaseOne": ("1", "First"), "TestPhaseTwo": ("2", "Second")},
+    friendly={"test_a": "A", "test_b": "B"},
+    mission_id="2-6",
+)
+'''
+
+
+def test_badge_block_on_full_completion(pytester):
+    result = _run(pytester, '''
+class TestPhaseOne:
+    def test_a(self): assert True
+class TestPhaseTwo:
+    def test_b(self): assert True
+''', conftest=BADGE_CONFTEST)
+    err = result.stderr.str()
+    assert "Rank earned: Lieutenant" in err
+    assert "img.shields.io/badge/SDC_Rank-Lieutenant-navy" in err
+    assert "Mission_2.6-Counterattack-brightgreen" in err
+    assert result.ret == 0
+
+
+def test_no_badge_when_incomplete(pytester):
+    result = _run(pytester, '''
+class TestPhaseOne:
+    def test_a(self): assert True
+class TestPhaseTwo:
+    def test_b(self): assert False, "ARIA: nope"
+''', conftest=BADGE_CONFTEST)
+    err = result.stderr.str()
+    assert "Rank earned" not in err
+    assert "shields.io" not in err
+
+
+def test_no_badge_for_unknown_mission(pytester):
+    conftest = BADGE_CONFTEST.replace('mission_id="2-6"', 'mission_id="does-not-exist"')
+    result = _run(pytester, '''
+class TestPhaseOne:
+    def test_a(self): assert True
+class TestPhaseTwo:
+    def test_b(self): assert True
+''', conftest=conftest)
+    err = result.stderr.str()
+    assert "Rank earned" not in err
+    assert result.ret == 0
+
+
+def test_shields_escape_handles_spaces_and_dashes():
+    from aria_reporter.plugin import _shields_escape
+    assert _shields_escape("Lieutenant Commander") == "Lieutenant_Commander"
+    assert _shields_escape("Defence-in Depth") == "Defence--in_Depth"
+
+
+def test_master_earns_lieutenant_commander(pytester):
+    conftest = BADGE_CONFTEST.replace('mission_id="2-6"', 'mission_id="master", unit="Mission"')
+    result = _run(pytester, '''
+class TestPhaseOne:
+    def test_a(self): assert True
+class TestPhaseTwo:
+    def test_b(self): assert True
+''', conftest=conftest)
+    err = result.stderr.str()
+    assert "Rank earned: Lieutenant Commander" in err
+    assert "SDC_Rank-Lieutenant_Commander-navy" in err
+
+
 def test_unknown_class_and_test_fall_back_gracefully(pytester):
     result = _run(pytester, '''
 class TestUnmapped:

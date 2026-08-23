@@ -64,6 +64,64 @@ def configure(phases=None, friendly=None, mission_id=None, unit="Phase"):
 
 
 # ---------------------------------------------------------------------------
+# Rank ladder + mission codenames (#48). Royal Navy officer track (sdc-academy
+# #64) — never mixes officer and rating ranks. Full mission completion earns the
+# rank the cadet holds at that milestone; the plugin emits a copy-paste
+# shields.io badge block the cadet adds to their README.
+# ---------------------------------------------------------------------------
+
+RANK_BY_MISSION = {
+    "0": "Midshipman",
+    "1-1": "Sub-Lieutenant", "1-2": "Sub-Lieutenant", "1-3": "Sub-Lieutenant",
+    "1-4": "Sub-Lieutenant", "1-5": "Sub-Lieutenant",
+    "gateway": "Lieutenant",
+    "2-1": "Lieutenant", "2-2": "Lieutenant", "2-3": "Lieutenant",
+    "2-4": "Lieutenant", "2-5": "Lieutenant", "2-6": "Lieutenant",
+    "master": "Lieutenant Commander",
+}
+
+# mission_id -> (badge label, codename)
+CODENAME = {
+    "0": ("Mission 0", "Reporting for Duty"),
+    "1-1": ("Mission 1.1", "Fleet Census"),
+    "1-2": ("Mission 1.2", "Lock the Door"),
+    "1-3": ("Mission 1.3", "Clean Sweep"),
+    "1-4": ("Mission 1.4", "Many Ships"),
+    "1-5": ("Mission 1.5", "Clean House"),
+    "gateway": ("Gateway", "First Contact"),
+    "2-1": ("Mission 2.1", "Weapon Handling Test"),
+    "2-2": ("Mission 2.2", "Compliance as Code"),
+    "2-3": ("Mission 2.3", "Fleet Sync"),
+    "2-4": ("Mission 2.4", "Defence in Depth"),
+    "2-5": ("Mission 2.5", "Noise Storm"),
+    "2-6": ("Mission 2.6", "Counterattack"),
+    "master": ("Master Simulation", "Iron Curtain"),
+}
+
+
+def _shields_escape(text):
+    """shields.io badge encoding: '-' -> '--', '_' -> '__', ' ' -> '_'."""
+    return text.replace("-", "--").replace("_", "__").replace(" ", "_")
+
+
+def _badge_block(mission_id):
+    """Return the markdown badge lines for a fully-completed mission, or None."""
+    rank = RANK_BY_MISSION.get(mission_id)
+    label, codename = CODENAME.get(mission_id, (None, None))
+    if not rank or not label:
+        return None
+    rank_badge = (
+        f"![SDC Rank](https://img.shields.io/badge/"
+        f"SDC_Rank-{_shields_escape(rank)}-navy)"
+    )
+    mission_badge = (
+        f"![{label}](https://img.shields.io/badge/"
+        f"{_shields_escape(label)}-{_shields_escape(codename)}-brightgreen)"
+    )
+    return rank, f"{rank_badge} {mission_badge}"
+
+
+# ---------------------------------------------------------------------------
 # Colour (honours ARIA_COLOR=1, else auto-detects a tty)
 # ---------------------------------------------------------------------------
 
@@ -165,6 +223,19 @@ class _ARIAReporter:
             f"  {p['BOLD']}Results:{p['RESET']} {' · '.join(segs)}"
             f"  {p['DIM']}({total} checks){p['RESET']}\n"
         )
+
+        # #48 — rank + shareable badges, only on a fully-completed mission
+        # (every phase green, nothing deficient). Incomplete runs are unchanged.
+        complete = (
+            self.failed == 0 and total_phases > 0 and phases_complete == total_phases
+        )
+        if complete:
+            block = _badge_block(_CONFIG.get("mission_id"))
+            if block:
+                rank, badges = block
+                self._out(f"\n  {p['CYAN']}{p['BOLD']}🎖  Rank earned: {rank}{p['RESET']}\n")
+                self._out(f"  {p['DIM']}Add your badges to your README:{p['RESET']}\n")
+                self._out(f"  {badges}\n")
 
 
 def _extract_hint(longrepr):
