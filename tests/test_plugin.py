@@ -177,6 +177,101 @@ def test_shields_escape_handles_spaces_and_dashes():
     assert _shields_escape("Defence-in Depth") == "Defence--in_Depth"
 
 
+# --- #50 capstone performance tiers ---------------------------------------
+
+def test_tier_for_boundaries():
+    from aria_reporter.plugin import _tier_for
+    # gateway bands: <45 Ace, <55 Distinguished, <65 Qualified, <75 Passed, else RTB
+    assert _tier_for("gateway", 44) == "Ace Cadet"
+    assert _tier_for("gateway", 45) == "Distinguished"   # boundary is exclusive-below
+    assert _tier_for("gateway", 74) == "Passed"
+    assert _tier_for("gateway", 75) == "RTB — retry"
+    assert _tier_for("gateway", 999) == "RTB — retry"
+    # master bands are in minutes (hours * 60)
+    assert _tier_for("master", 149) == "Outstanding"
+    assert _tier_for("master", 240) == "Return to AIT — retry"
+    # non-capstone / no time -> no tier
+    assert _tier_for("2-6", 30) is None
+    assert _tier_for("gateway", None) is None
+
+
+def test_elapsed_min_env_parsing(monkeypatch):
+    from aria_reporter.plugin import _elapsed_min_from_env
+    monkeypatch.delenv("ARIA_ELAPSED_MIN", raising=False)
+    assert _elapsed_min_from_env() is None
+    monkeypatch.setenv("ARIA_ELAPSED_MIN", "52")
+    assert _elapsed_min_from_env() == 52
+    monkeypatch.setenv("ARIA_ELAPSED_MIN", "not-a-number")
+    assert _elapsed_min_from_env() is None
+    monkeypatch.setenv("ARIA_ELAPSED_MIN", "-5")
+    assert _elapsed_min_from_env() is None
+
+
+GATEWAY_CONFTEST = '''
+from aria_reporter import configure
+configure(
+    phases={"TestReconnaissance": ("1", "Recon"), "TestHardening": ("2", "Hardening")},
+    friendly={"test_a": "A", "test_b": "B"},
+    mission_id="gateway",
+    unit="Mission",
+)
+'''
+
+GATEWAY_PASS = '''
+class TestReconnaissance:
+    def test_a(self): assert True
+class TestHardening:
+    def test_b(self): assert True
+'''
+
+
+def test_capstone_computes_tier_from_env(pytester, monkeypatch):
+    monkeypatch.setenv("ARIA_ELAPSED_MIN", "52")
+    result = _run(pytester, GATEWAY_PASS, conftest=GATEWAY_CONFTEST)
+    err = result.stderr.str()
+    assert "Time: 52 min" in err
+    assert "Performance tier: Distinguished" in err
+    assert result.ret == 0
+
+
+def test_capstone_shows_table_without_env(pytester, monkeypatch):
+    monkeypatch.delenv("ARIA_ELAPSED_MIN", raising=False)
+    result = _run(pytester, GATEWAY_PASS, conftest=GATEWAY_CONFTEST)
+    err = result.stderr.str()
+    assert "Performance tiers" in err        # reference-table header
+    assert "Ace Cadet <45" in err
+    assert "Time:" not in err                 # no computed time without the env
+    assert result.ret == 0
+
+
+def test_no_tier_for_non_capstone(pytester, monkeypatch):
+    monkeypatch.setenv("ARIA_ELAPSED_MIN", "52")   # present, but 2-6 has no tiers
+    result = _run(pytester, '''
+class TestPhaseOne:
+    def test_a(self): assert True
+class TestPhaseTwo:
+    def test_b(self): assert True
+''', conftest=BADGE_CONFTEST)
+    err = result.stderr.str()
+    assert "Performance tier" not in err
+    assert "Rank earned: Lieutenant" in err   # badge still fires for 2-6
+    assert result.ret == 0
+
+
+def test_incomplete_capstone_no_tier(pytester, monkeypatch):
+    monkeypatch.setenv("ARIA_ELAPSED_MIN", "52")
+    result = _run(pytester, '''
+class TestReconnaissance:
+    def test_a(self): assert True
+class TestHardening:
+    def test_b(self): assert False, "ARIA: nope"
+''', conftest=GATEWAY_CONFTEST)
+    err = result.stderr.str()
+    # a capstone that isn't fully complete earns no tier and no badge
+    assert "Performance tier" not in err
+    assert "Rank earned" not in err
+
+
 def test_reward_for_public_helper():
     # #48 — public API used by aria-review.py to surface the badge in the PR
     # review from the same data the make-test summary emits.

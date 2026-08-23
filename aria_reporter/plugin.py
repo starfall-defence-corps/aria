@@ -208,6 +208,69 @@ def reward_for(mission_id):
 
 
 # ---------------------------------------------------------------------------
+# Capstone performance tiers (#50). The Gateway and Master briefings define a
+# time-based rating ("drill the skill until it bends to your will" — speed is
+# mastery). Each entry is an ascending list of (upper_bound_minutes_exclusive,
+# rating); the first bucket whose bound the elapsed time is under wins. The
+# final bucket uses a sentinel bound (None) as the catch-all "retry" band.
+#
+# Wall-clock comes from the ARIA_ELAPSED_MIN env var, which `make test` sets
+# from a start stamp written by `make setup` — a real, honest timer, not the
+# honour-system CHECKLIST clock. If the var is absent the reference table is
+# printed instead so the cadet can self-assess.
+# ---------------------------------------------------------------------------
+
+TIERS = {
+    "gateway": [
+        (45, "Ace Cadet"), (55, "Distinguished"), (65, "Qualified"),
+        (75, "Passed"), (None, "RTB — retry"),
+    ],
+    "master": [
+        (150, "Outstanding"), (180, "Excellent"), (210, "Qualified"),
+        (240, "Passed"), (None, "Return to AIT — retry"),
+    ],
+}
+
+
+def _tier_for(mission_id, elapsed_min):
+    """Rating for a completion time, or None if the mission has no tiers."""
+    table = TIERS.get(mission_id)
+    if table is None or elapsed_min is None:
+        return None
+    for bound, rating in table:
+        if bound is None or elapsed_min < bound:
+            return rating
+    return table[-1][1]
+
+
+def _tier_table(mission_id):
+    """One-line reference of a mission's tier bands, or "" if none."""
+    table = TIERS.get(mission_id)
+    if not table:
+        return ""
+    parts, prev = [], 0
+    for bound, rating in table:
+        if bound is None:
+            parts.append(f"{rating} {prev}+")
+        else:
+            parts.append(f"{rating} <{bound}")
+            prev = bound
+    return "  ·  ".join(parts)
+
+
+def _elapsed_min_from_env():
+    """Parse ARIA_ELAPSED_MIN (whole minutes) from the environment, or None."""
+    raw = os.environ.get("ARIA_ELAPSED_MIN", "").strip()
+    if not raw:
+        return None
+    try:
+        val = int(raw)
+    except ValueError:
+        return None
+    return val if val >= 0 else None
+
+
+# ---------------------------------------------------------------------------
 # Colour (honours ARIA_COLOR=1, else auto-detects a tty)
 # ---------------------------------------------------------------------------
 
@@ -343,6 +406,27 @@ class _ARIAReporter:
                 self._out(f"\n  {p['CYAN']}{p['BOLD']}🎖  Rank earned: {rank}{p['RESET']}\n")
                 self._out(f"  {p['DIM']}Add your badges to your README:{p['RESET']}\n")
                 self._out(f"  {badges}\n")
+
+            # #50 — capstone performance tier (only for missions with a TIERS
+            # table). Real wall-clock from ARIA_ELAPSED_MIN when make test set
+            # it; otherwise the reference table for honour-system self-scoring.
+            mid = _CONFIG.get("mission_id")
+            if mid in TIERS:
+                elapsed = _elapsed_min_from_env()
+                if elapsed is not None:
+                    rating = _tier_for(mid, elapsed)
+                    self._out(
+                        f"\n  {p['YELLOW']}{p['BOLD']}⏱  Time: {elapsed} min"
+                        f"  →  Performance tier: {rating}{p['RESET']}\n"
+                    )
+                    self._out(f"  {p['DIM']}{_tier_table(mid)}{p['RESET']}\n")
+                else:
+                    self._out(
+                        f"\n  {p['YELLOW']}{p['BOLD']}⏱  Performance tiers"
+                        f"{p['RESET']} {p['DIM']}(run `make setup` to start the "
+                        f"clock){p['RESET']}\n"
+                    )
+                    self._out(f"  {p['DIM']}{_tier_table(mid)}{p['RESET']}\n")
 
 
 def _extract_hint(longrepr):
