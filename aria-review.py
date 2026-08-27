@@ -66,6 +66,18 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "1-6": {
+        "test": "molecule/default/tests/test_inventory_from_nothing.py",
+        "student_files": [
+            "workspace/recon/live-hosts.txt",
+            "workspace/recon/services.yml",
+            "workspace/inventory/hosts.yml",
+            "workspace/inventory/live_subnet.py",
+            "workspace/inventory/nmap.yml",
+            "workspace/ansible.cfg",
+            "workspace/reports/fleet-report.yml",
+        ],
+    },
     "gateway": {
         "test": "molecule/default/tests/test_gateway.py",
         "context_file": "gateway-simulation.md",
