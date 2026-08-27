@@ -73,7 +73,7 @@ def configure(phases=None, friendly=None, mission_id=None, unit="Phase"):
 RANK_BY_MISSION = {
     "0": "Midshipman",
     "1-1": "Sub-Lieutenant", "1-2": "Sub-Lieutenant", "1-3": "Sub-Lieutenant",
-    "1-4": "Sub-Lieutenant", "1-5": "Sub-Lieutenant",
+    "1-4": "Sub-Lieutenant", "1-5": "Sub-Lieutenant", "1-6": "Sub-Lieutenant",
     "gateway": "Lieutenant",
     "2-1": "Lieutenant", "2-2": "Lieutenant", "2-3": "Lieutenant",
     "2-4": "Lieutenant", "2-5": "Lieutenant", "2-6": "Lieutenant",
@@ -88,6 +88,7 @@ CODENAME = {
     "1-3": ("Mission 1.3", "Clean Sweep"),
     "1-4": ("Mission 1.4", "Many Ships"),
     "1-5": ("Mission 1.5", "Clean House"),
+    "1-6": ("Mission 1.6", "Inventory from Nothing"),
     "gateway": ("Gateway", "First Contact"),
     "2-1": ("Mission 2.1", "Weapon Handling Test"),
     "2-2": ("Mission 2.2", "Compliance as Code"),
@@ -157,6 +158,14 @@ INTEL = {
         "2": "The final decrypt needs a key. SDC cryptographers open the Vault, and the last of the picture resolves.",
         "3": "It assembles: a forward observation post — three nodes — already boarded. SSH wide open, secrets sitting on disk.",
         "4": "Coordinates locked: 172.31.0.0/24. The post is a liability and still bleeding. Command cuts a Gateway tasking — Operation First Contact.",
+    },
+    # 1-6 Inventory from Nothing — the last Foundation skill before Gateway.
+    "1-6": {
+        "1": "Before the tasking can launch, a complication: the boarded post's addressing will not hold still. A ghost is moving it. Command names her Nyx, the Signal Ghost.",
+        "2": "Nyx rotates a node's address faster than any static map can follow. Lesson from the frontier — fingerprint the service, never trust the number.",
+        "3": "Every fleet you will ever be handed begins the way this one has: alive, unlabelled, buried in the noise of its own subnet. No inventory — just a range.",
+        "4": "You raise the whole map from a single line — 172.30.0.0/24 — and hold it while Nyx moves the fleet beneath you. The map survives the rotation.",
+        "5": "Cartography confirmed. You can walk into any range cold and chart it from nothing. Cleared to deploy: Gateway — Operation First Contact, at 172.31.0.0/24.",
     },
 }
 
