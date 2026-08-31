@@ -78,6 +78,8 @@ RANK_BY_MISSION = {
     "2-1": "Lieutenant", "2-2": "Lieutenant", "2-3": "Lieutenant",
     "2-4": "Lieutenant", "2-5": "Lieutenant", "2-6": "Lieutenant",
     "master": "Lieutenant Commander",
+    # Module 3 (MOS specialisations): held at Lieutenant Commander; 2+ MOS earns Commander.
+    "3-4": "Lieutenant Commander",
 }
 
 # mission_id -> (badge label, codename)
@@ -96,6 +98,7 @@ CODENAME = {
     "2-4": ("Mission 2.4", "Defence in Depth"),
     "2-5": ("Mission 2.5", "Noise Storm"),
     "2-6": ("Mission 2.6", "Counterattack"),
+    "3-4": ("MOS 4", "Eyes Everywhere"),
     "master": ("Master Simulation", "Iron Curtain"),
 }
 
@@ -166,6 +169,14 @@ INTEL = {
         "3": "Every fleet you will ever be handed begins the way this one has: alive, unlabelled, buried in the noise of its own subnet. No inventory — just a range.",
         "4": "You raise the whole map from a single line — 172.30.0.0/24 — and hold it while Nyx moves the fleet beneath you. The map survives the rotation.",
         "5": "Cartography confirmed. You can walk into any range cold and chart it from nothing. Cleared to deploy: Gateway — Operation First Contact, at 172.31.0.0/24.",
+    },
+    # 3-4 MOS 4 Eyes Everywhere — the Detection & Monitoring specialisation.
+    "3-4": {
+        "1": "First MOS-4 intercept: a raider cell learned we win or lose by what we can see. They mean to blind us before they board.",
+        "2": "Their operator surfaces in the logs that survive — The Phantom Logstash. It doesn't break in; it breaks your pipeline, then walks in unwatched.",
+        "3": "Decrypt: the Phantom's tell is a fleet that looks instrumented but delivers nothing — agents installed, forwarders never restarted. Config without delivery is blindness with paperwork.",
+        "4": "Coverage is the whole game. One dark node is the door. The Phantom hunts the single host your rollout skipped.",
+        "5": "Confirmed doctrine: name your collector, never number it. The Phantom's favourite trick is moving the SIEM and watching hardcoded fleets go quiet. Yours stayed lit. Eyes everywhere.",
     },
 }
 
