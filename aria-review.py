@@ -18,6 +18,18 @@ import sys
 
 
 MISSION_MAP = {
+    "0": {
+        # Enrolment mission. CI runs with skip-tests=true, so this "test"
+        # path is never executed in the PR review — it is here for local
+        # `make test` / parity only. The cadet edits no workspace files
+        # (inventory + ansible.cfg ship as issued equipment); ARIA's PR
+        # review is a first-contact orientation, guided by mission-0.md.
+        "test": "molecule/default/tests/test_reporting_for_duty.py",
+        "student_files": [
+            "workspace/inventory/hosts.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
     "1-1": {
         "test": "molecule/default/tests/test_fleet_census.py",
         "student_files": [
