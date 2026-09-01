@@ -164,6 +164,17 @@ MISSION_MAP = {
             "workspace/ansible.cfg",
         ],
     },
+    "3-5": {
+        "test": "molecule/default/tests/",
+        "student_files": [
+            "workspace/runbooks/block-ioc.yml",
+            "workspace/runbooks/collect-triage.yml",
+            "workspace/runbooks/rotate-creds.yml",
+            "workspace/runbooks/restore-service.yml",
+            "workspace/inventory/hosts.yml",
+            "workspace/ansible.cfg",
+        ],
+    },
     "master": {
         "test": "molecule/default/tests/test_iron_curtain.py",
         "context_file": "master-simulation.md",

@@ -80,6 +80,7 @@ RANK_BY_MISSION = {
     "master": "Lieutenant Commander",
     # Module 3 (MOS specialisations): held at Lieutenant Commander; 2+ MOS earns Commander.
     "3-4": "Lieutenant Commander",
+    "3-5": "Lieutenant Commander",
 }
 
 # mission_id -> (badge label, codename)
@@ -99,6 +100,7 @@ CODENAME = {
     "2-5": ("Mission 2.5", "Noise Storm"),
     "2-6": ("Mission 2.6", "Counterattack"),
     "3-4": ("MOS 4", "Eyes Everywhere"),
+    "3-5": ("MOS 5", "Battle Rattle"),
     "master": ("Master Simulation", "Iron Curtain"),
 }
 
@@ -177,6 +179,13 @@ INTEL = {
         "3": "Decrypt: the Phantom's tell is a fleet that looks instrumented but delivers nothing — agents installed, forwarders never restarted. Config without delivery is blindness with paperwork.",
         "4": "Coverage is the whole game. One dark node is the door. The Phantom hunts the single host your rollout skipped.",
         "5": "Confirmed doctrine: name your collector, never number it. The Phantom's favourite trick is moving the SIEM and watching hardcoded fleets go quiet. Yours stayed lit. Eyes everywhere.",
+    },
+    # 3-5 MOS 5 Battle Rattle — the Incident Response Automation specialisation.
+    "3-5": {
+        "1": "First MOS-5 intercept: a raider cell that never strikes the same way twice. Sever one indicator and it regrows under another. Command gives it a name — the Hydra. You dropped an address you had never seen, fleet-wide, and it stayed dropped.",
+        "2": "The Hydra hides which head is live, so you learned to look before you leap — read the evidence, name the indicator from the log, never from memory. Recon that changes nothing and reports only what's real.",
+        "3": "It rotates stolen credentials across the whole fleet at once; you rotated them right back, every node, and left the accounts working. Automation that revokes without locking anyone out.",
+        "4": "Final doctrine: it downs your services to make you improvise — and you refused. You reconciled each one from known-good state, no restart theatre, no snowflake fix. Four runbooks that work for ANY indicator: a battle rattle, and it is yours.",
     },
 }
 
