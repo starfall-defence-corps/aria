@@ -1,6 +1,6 @@
 ## Mission Context: 2.4 — The Automated Defence Line (CI/CD Pipelines)
 
-Lieutenant rank mission. Villain: Private YOLO-Deploy (final confrontation). Students learn to build CI/CD pipelines that enforce quality gates: lint, test, scan. This is the only mission focused on GitHub Actions workflow YAML, not Ansible targeting infrastructure.
+Lieutenant rank mission. Villain: Reaver YOLO-Deploy (final confrontation). Students learn to build CI/CD pipelines that enforce quality gates: lint, test, scan. This is the only mission focused on GitHub Actions workflow YAML, not Ansible targeting infrastructure.
 
 The mission has three phases:
 

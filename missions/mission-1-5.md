@@ -1,6 +1,6 @@
 ## Mission Context: 1.5 — Clean House
 
-The cadet's fifth and final Module 1 mission. Colonel Hardcoded-Password has left plaintext credentials on every fleet node. The cadet must restructure all previous work (1.2–1.4) into a proper Ansible role, encrypt secrets with Vault, and follow Git workflow discipline.
+The cadet's fifth and final Module 1 mission. Warlord Hardcoded-Password has left plaintext credentials on every fleet node. The cadet must restructure all previous work (1.2–1.4) into a proper Ansible role, encrypt secrets with Vault, and follow Git workflow discipline.
 
 The fleet is mixed-OS: sdc-web (Ubuntu 22.04), sdc-db (Rocky Linux 9), sdc-comms (Ubuntu 22.04). Each node has plaintext credentials at `/opt/fleet-db-creds.txt`.
 

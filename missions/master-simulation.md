@@ -1,8 +1,8 @@
 ## Mission Context: Master Simulation — Operation: Iron Curtain
 
-The Master Simulation is the **capstone assessment** for Module 2 (Advanced Training). The cadet must synthesise every skill from missions 2.1–2.4 — plus all Module 1 foundations — to replace General Snowflake's hand-built infrastructure with uniform, tested, automated CIS compliance across a 6-node fleet. This is a 3.5-hour timed assessment with no step-by-step guidance.
+The Master Simulation is the **capstone assessment** for Module 2 (Advanced Training). The cadet must synthesise every skill from missions 2.1–2.6 — plus all Module 1 foundations — to replace Dread Admiral Snowflake's hand-built infrastructure with uniform, tested, automated CIS compliance across a 6-node fleet. This is a 3.5-hour timed assessment with no step-by-step guidance.
 
-The Iron Curtain Fleet consists of 6 nodes: sdc-iron-web-1 (Ubuntu 22.04), sdc-iron-web-2 (Ubuntu 22.04), sdc-iron-db-1 (Rocky Linux 9), sdc-iron-db-2 (Rocky Linux 9), sdc-iron-app (Ubuntu 22.04), sdc-iron-comms (Ubuntu 22.04). All nodes ship with General Snowflake's misconfigurations: SSH root login enabled, password auth, weak MaxAuthTries/LoginGraceTime/ClientAliveInterval, /etc/shadow 0644, IP forwarding enabled, ICMP redirects accepted, no cron.allow/at.allow, core dumps unrestricted, no login banner, telnet/xinetd on Ubuntu, hardcoded credentials at /opt/fleet-db-creds.txt.
+The Iron Curtain Fleet consists of 6 nodes: sdc-iron-web-1 (Ubuntu 22.04), sdc-iron-web-2 (Ubuntu 22.04), sdc-iron-db-1 (Rocky Linux 9), sdc-iron-db-2 (Rocky Linux 9), sdc-iron-app (Ubuntu 22.04), sdc-iron-comms (Ubuntu 22.04). All nodes ship with Dread Admiral Snowflake's misconfigurations: SSH root login enabled, password auth, weak MaxAuthTries/LoginGraceTime/ClientAliveInterval, /etc/shadow 0644, IP forwarding enabled, ICMP redirects accepted, no cron.allow/at.allow, core dumps unrestricted, no login banner, telnet/xinetd on Ubuntu, hardcoded credentials at /opt/fleet-db-creds.txt.
 
 The assessment has four missions:
 
