@@ -31,7 +31,7 @@ MISSION_MAP = {
         ],
     },
     "1-1": {
-        "test": "molecule/default/tests/test_fleet_census.py",
+        "test": "molecule/default/tests/test_fleet_inspection.py",
         "student_files": [
             "workspace/inventory/hosts.yml",
             "workspace/ansible.cfg",

@@ -1,6 +1,6 @@
 ## Mission Context: 2.2 — Compliance as Code (CIS Benchmarks)
 
-The cadet's second Module 2 mission. Villain: Captain Unpatched. Students learn to implement CIS Level 1 benchmark controls as Ansible tasks, use tags for selective enforcement, and measure compliance with Lynis.
+The cadet's second Module 2 mission. Villain: Corsair Unpatched. Students learn to implement CIS Level 1 benchmark controls as Ansible tasks, use tags for selective enforcement, and measure compliance with Lynis.
 
 The mission has three parts:
 

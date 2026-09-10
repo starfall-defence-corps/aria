@@ -1,6 +1,6 @@
 ## Mission Context: Gateway Simulation — Operation First Contact
 
-The Gateway Simulation is the **capstone assessment** for Module 1 (Basic Training). The cadet must combine every skill from missions 1.1–1.5 to secure a compromised forward observation post under a 75-minute time limit. No step-by-step guidance is provided — only a briefing.
+The Gateway Simulation is the **capstone assessment** for Module 1 (Basic Training). The cadet must combine every skill from missions 1.1–1.6 to secure a compromised forward observation post under a 75-minute time limit. No step-by-step guidance is provided — only a briefing.
 
 The forward observation post is a mixed-OS fleet: sdc-fwd-web (Ubuntu 22.04), sdc-fwd-db (Rocky Linux 9), sdc-fwd-comms (Ubuntu 22.04). All nodes are compromised with combined misconfigurations from the entire module: SSH root login enabled, password auth enabled, telnet/xinetd on Ubuntu, firewall inactive, weak file permissions, hardcoded credentials at `/opt/fleet-db-creds.txt`, no kernel hardening, no login banners.
 

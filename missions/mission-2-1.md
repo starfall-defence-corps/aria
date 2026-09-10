@@ -1,6 +1,6 @@
 ## Mission Context: 2.1 — Weapon Handling Test (Molecule Deep Dive)
 
-The cadet's first Module 2 mission. Villain: Private YOLO-Deploy. This mission is fundamentally different from Module 1 — instead of writing Ansible roles to pass pre-written tests, students learn to write tests themselves using Molecule and Testinfra.
+The cadet's first Module 2 mission. Villain: Reaver YOLO-Deploy. This mission is fundamentally different from Module 1 — instead of writing Ansible roles to pass pre-written tests, students learn to write tests themselves using Molecule and Testinfra.
 
 The mission has three parts:
 

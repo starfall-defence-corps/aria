@@ -1,6 +1,6 @@
 ## Mission Context: 1.4 — One Playbook, Many Ships
 
-The cadet's fourth mission. Voidborn operative Corporal Copy-Paste has written 47 separate playbooks for the fleet. The cadet must replace them with ONE playbook that works on both Ubuntu and Rocky Linux using variables, Jinja2 templates, and conditionals.
+The cadet's fourth mission. Voidborn operative Marauder Copy-Paste has written 47 separate playbooks for the fleet. The cadet must replace them with ONE playbook that works on both Ubuntu and Rocky Linux using variables, Jinja2 templates, and conditionals.
 
 The fleet is now **mixed-OS**: sdc-web (Ubuntu 22.04), sdc-db (Rocky Linux 9), sdc-comms (Ubuntu 22.04).
 

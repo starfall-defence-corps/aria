@@ -1,6 +1,6 @@
 ## Mission Context: 1.1 — Fleet Census
 
-The cadet's first mission. The fleet's asset registry is in disarray after Agent Chmod-777 left classified files with world-readable permissions (777) across fleet nodes. The cadet must:
+The cadet's first mission. The fleet's asset registry is in disarray after Saboteur Chmod-777 left classified files with world-readable permissions (777) across fleet nodes. The cadet must:
 
 1. **Build an Ansible inventory** (`workspace/inventory/hosts.yml`) cataloguing 3 fleet nodes:
    - `sdc-web` (web server, port 2221)
