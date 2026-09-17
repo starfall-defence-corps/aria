@@ -289,12 +289,12 @@ def _load_prompts(mission_id):
     # use the rank stated at the end of the mission context.
     rank_note = ""
     try:
-        from aria_reporter import reward_for
-        reward = reward_for(mission_id)
-        if reward:
+        from aria_reporter import rank_held
+        held = rank_held(mission_id)
+        if held:
             rank_note = (
                 f"\n\n---\n\nThe student currently holds the rank of "
-                f"{reward[0]}. Address them as \"{reward[0]}\"."
+                f"{held}. Address them as \"{held}\"."
             )
     except Exception:
         pass

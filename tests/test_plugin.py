@@ -539,3 +539,17 @@ class TestIdempotency:
     assert "172.31.0.0/24" in err
     assert "Operation First Contact" in err
     assert "forward observation post" in err
+
+
+def test_rank_held_walking_vs_conferring():
+    # #116/#36 — reviews address the rank held while walking, which for
+    # conferring missions is the previous rung, not the completion reward.
+    from aria_reporter import rank_held
+    assert rank_held("0") == "Cadet"
+    assert rank_held("1-3") == "Midshipman"
+    assert rank_held("1-6") == "Midshipman"
+    assert rank_held("gateway") == "Sub-Lieutenant"
+    assert rank_held("2-3") == "Lieutenant"
+    assert rank_held("master") == "Lieutenant"
+    assert rank_held("3-4") == "Lieutenant Commander"
+    assert rank_held("does-not-exist") is None

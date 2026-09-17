@@ -90,6 +90,27 @@ RANK_BY_MISSION = {
 # (sdc-academy #116 — live E2E feedback: "earned rank? or kept the rank?").
 RANK_CONFERRED_BY = {"0", "1-6", "gateway", "master"}
 
+# Rank held while *walking* a conferring mission — the student only gains the
+# RANK_BY_MISSION value on completion, so reviews of in-progress work must
+# address them by the previous rung (Codex review on aria#36).
+HELD_WHILE_WALKING = {
+    "0": "Cadet",
+    "1-6": "Midshipman",
+    "gateway": "Sub-Lieutenant",
+    "master": "Lieutenant",
+}
+
+
+def rank_held(mission_id):
+    """Public: rank the student holds while attempting ``mission_id``.
+
+    Used by aria-review.py to address the student in qualitative reviews;
+    returns None for unknown missions (caller falls back to "Cadet").
+    """
+    if mission_id in HELD_WHILE_WALKING:
+        return HELD_WHILE_WALKING[mission_id]
+    return RANK_BY_MISSION.get(mission_id)
+
 # mission_id -> (badge label, codename)
 CODENAME = {
     "0": ("Mission 0", "Reporting for Duty"),
