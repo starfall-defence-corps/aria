@@ -408,7 +408,10 @@ def main():
             "To enable AI review on pull requests: create an Anthropic API "
             "key and add it as a repository secret named ANTHROPIC_API_KEY "
             "(Settings → Secrets and variables → Actions → "
-            "New repository secret)."
+            "New repository secret).\n\n"
+            "Adding the secret does not re-run this review by itself: "
+            "afterwards, go to the Actions tab → this ARIA Review run → "
+            "'Re-run all jobs' (or push any new commit to this branch)."
         )
         print()
         print("----------------------------------------------")
@@ -466,7 +469,10 @@ def main():
                 f.write("\n\n## ARIA QUALITATIVE REVIEW\n\n")
                 f.write(review_note)
                 f.write("\n")
-            if reward_md:
+            # Only surface the rank/badge block when this run actually
+            # verified something (tests ran or an LLM review happened) —
+            # otherwise it reads as a verdict the run never reached.
+            if reward_md and (review_text or test_exit_code is not None):
                 f.write(reward_md)
 
     # Final banner and exit
