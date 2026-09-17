@@ -215,16 +215,27 @@ def _render_reward(mission_id):
     """
     try:
         from aria_reporter import reward_for
+        from aria_reporter.plugin import RANK_CONFERRED_BY
     except Exception:
         return ""
     reward = reward_for(mission_id)
     if not reward:
         return ""
     rank, badges = reward
+    if mission_id in RANK_CONFERRED_BY:
+        line = (
+            f"Complete this mission — all phases green in `make test` — "
+            f"to earn the rank of {rank}."
+        )
+    else:
+        line = (
+            f"This mission is walked at the rank of {rank} — complete it "
+            f"(all phases green in `make test`) to log it toward your "
+            f"next promotion."
+        )
     return (
         "\n\n## Rank & Badge\n\n"
-        f"Complete this mission — all phases green in `make test` — to earn the "
-        f"rank of {rank}. Add these badges to your repo README:\n\n"
+        f"{line} Add these badges to your repo README:\n\n"
         f"{badges}\n"
     )
 
@@ -285,7 +296,21 @@ def _load_prompts(mission_id):
     with open(mission_path) as f:
         mission_context = f.read()
 
-    return f"{base_prompt}\n\n---\n\n{mission_context}"
+    # Rank-aware address (sdc-academy #116): the system prompt tells ARIA to
+    # use the rank stated at the end of the mission context.
+    rank_note = ""
+    try:
+        from aria_reporter import rank_held
+        held = rank_held(mission_id)
+        if held:
+            rank_note = (
+                f"\n\n---\n\nThe student currently holds the rank of "
+                f"{held}. Address them as \"{held}\"."
+            )
+    except Exception:
+        pass
+
+    return f"{base_prompt}\n\n---\n\n{mission_context}{rank_note}"
 
 
 def _build_user_message(test_exit_code, test_stdout, test_stderr, student_files):

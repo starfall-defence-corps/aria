@@ -85,6 +85,35 @@ RANK_BY_MISSION = {
     "3-5": "Lieutenant Commander",
 }
 
+# Missions whose completion confers a NEW rank; all other missions are walked
+# at a rank already held, so the banner reads "Rank held", not "Rank earned"
+# (sdc-academy #116 — live E2E feedback: "earned rank? or kept the rank?").
+# MOS missions (3-4, 3-5) are deliberately NOT here: a single MOS confers
+# nothing — Commander requires completing 2+ MOS (missions/mission-3-5.md) —
+# so an MOS completion correctly logs toward the promotion instead.
+RANK_CONFERRED_BY = {"0", "1-6", "gateway", "master"}
+
+# Rank held while *walking* a conferring mission — the student only gains the
+# RANK_BY_MISSION value on completion, so reviews of in-progress work must
+# address them by the previous rung (Codex review on aria#36).
+HELD_WHILE_WALKING = {
+    "0": "Cadet",
+    "1-6": "Midshipman",
+    "gateway": "Sub-Lieutenant",
+    "master": "Lieutenant",
+}
+
+
+def rank_held(mission_id):
+    """Public: rank the student holds while attempting ``mission_id``.
+
+    Used by aria-review.py to address the student in qualitative reviews;
+    returns None for unknown missions (caller falls back to "Cadet").
+    """
+    if mission_id in HELD_WHILE_WALKING:
+        return HELD_WHILE_WALKING[mission_id]
+    return RANK_BY_MISSION.get(mission_id)
+
 # mission_id -> (badge label, codename)
 CODENAME = {
     "0": ("Mission 0", "Reporting for Duty"),
@@ -547,7 +576,12 @@ class _ARIAReporter:
             block = _badge_block(_CONFIG.get("mission_id"))
             if block:
                 rank, badges = block
-                self._out(f"\n  {p['CYAN']}{p['BOLD']}🎖  Rank earned: {rank}{p['RESET']}\n")
+                verb = (
+                    "earned"
+                    if _CONFIG.get("mission_id") in RANK_CONFERRED_BY
+                    else "held"
+                )
+                self._out(f"\n  {p['CYAN']}{p['BOLD']}🎖  Rank {verb}: {rank}{p['RESET']}\n")
                 self._out(f"  {p['DIM']}Add your badges to your README:{p['RESET']}\n")
                 self._out(f"  {badges}\n")
 
