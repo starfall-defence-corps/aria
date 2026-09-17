@@ -285,7 +285,21 @@ def _load_prompts(mission_id):
     with open(mission_path) as f:
         mission_context = f.read()
 
-    return f"{base_prompt}\n\n---\n\n{mission_context}"
+    # Rank-aware address (sdc-academy #116): the system prompt tells ARIA to
+    # use the rank stated at the end of the mission context.
+    rank_note = ""
+    try:
+        from aria_reporter import reward_for
+        reward = reward_for(mission_id)
+        if reward:
+            rank_note = (
+                f"\n\n---\n\nThe student currently holds the rank of "
+                f"{reward[0]}. Address them as \"{reward[0]}\"."
+            )
+    except Exception:
+        pass
+
+    return f"{base_prompt}\n\n---\n\n{mission_context}{rank_note}"
 
 
 def _build_user_message(test_exit_code, test_stdout, test_stderr, student_files):

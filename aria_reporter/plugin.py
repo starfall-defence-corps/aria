@@ -85,6 +85,11 @@ RANK_BY_MISSION = {
     "3-5": "Lieutenant Commander",
 }
 
+# Missions whose completion confers a NEW rank; all other missions are walked
+# at a rank already held, so the banner reads "Rank held", not "Rank earned"
+# (sdc-academy #116 — live E2E feedback: "earned rank? or kept the rank?").
+RANK_CONFERRED_BY = {"0", "1-6", "gateway", "master"}
+
 # mission_id -> (badge label, codename)
 CODENAME = {
     "0": ("Mission 0", "Reporting for Duty"),
@@ -547,7 +552,12 @@ class _ARIAReporter:
             block = _badge_block(_CONFIG.get("mission_id"))
             if block:
                 rank, badges = block
-                self._out(f"\n  {p['CYAN']}{p['BOLD']}🎖  Rank earned: {rank}{p['RESET']}\n")
+                verb = (
+                    "earned"
+                    if _CONFIG.get("mission_id") in RANK_CONFERRED_BY
+                    else "held"
+                )
+                self._out(f"\n  {p['CYAN']}{p['BOLD']}🎖  Rank {verb}: {rank}{p['RESET']}\n")
                 self._out(f"  {p['DIM']}Add your badges to your README:{p['RESET']}\n")
                 self._out(f"  {badges}\n")
 

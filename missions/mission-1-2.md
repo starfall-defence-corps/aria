@@ -38,3 +38,7 @@ For the **Recommendations** section, consider suggesting:
 - Moving hardcoded values to variables for future reuse (preview of Mission 1.4)
 - Using `ansible.builtin.template` instead of multiple lineinfile tasks (preview of advanced patterns)
 - Adding a final verification task that checks SSH connectivity still works after hardening
+
+## Deliberate Simplifications (course-endorsed)
+
+- The optional HARD MODE self-heal follows the HINTS worked pattern: a cron job running a bash/sed re-assert script that duplicates the playbook's hardening logic and reloads SSH unconditionally every minute. This is the intended Module 1 solution — the production-grade answer (`ansible-pull` on a schedule: single source of truth, conditional reload) is not runnable on these lab nodes and is taught later. If present, credit the working re-assert and name the `ansible-pull` growth path in Recommendations, but do not call the cron/sed approach production-ready.

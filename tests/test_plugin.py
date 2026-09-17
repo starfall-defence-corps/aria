@@ -140,7 +140,7 @@ class TestPhaseTwo:
     def test_b(self): assert True
 ''', conftest=BADGE_CONFTEST)
     err = result.stderr.str()
-    assert "Rank earned: Lieutenant" in err
+    assert "Rank held: Lieutenant" in err
     assert "img.shields.io/badge/SDC_Rank-Lieutenant-navy" in err
     assert "Mission_2.6-Counterattack-brightgreen" in err
     assert result.ret == 0
@@ -155,6 +155,7 @@ class TestPhaseTwo:
 ''', conftest=BADGE_CONFTEST)
     err = result.stderr.str()
     assert "Rank earned" not in err
+    assert "Rank held" not in err
     assert "shields.io" not in err
 
 
@@ -168,6 +169,7 @@ class TestPhaseTwo:
 ''', conftest=conftest)
     err = result.stderr.str()
     assert "Rank earned" not in err
+    assert "Rank held" not in err
     assert result.ret == 0
 
 
@@ -254,7 +256,7 @@ class TestPhaseTwo:
 ''', conftest=BADGE_CONFTEST)
     err = result.stderr.str()
     assert "Performance tier" not in err
-    assert "Rank earned: Lieutenant" in err   # badge still fires for 2-6
+    assert "Rank held: Lieutenant" in err   # badge still fires for 2-6
     assert result.ret == 0
 
 
@@ -270,6 +272,7 @@ class TestHardening:
     # a capstone that isn't fully complete earns no tier and no badge
     assert "Performance tier" not in err
     assert "Rank earned" not in err
+    assert "Rank held" not in err
 
 
 # --- #56 exercise scoring engine ------------------------------------------
@@ -375,7 +378,8 @@ class TestHardening:
     assert "Exercise score:" in err
     assert "objectives 1/2" in err     # availability 100 + objective 50 -> 75
     assert "Qualified" in err
-    assert "Rank earned" not in err     # but no rank/tier — not complete
+    assert "Rank earned" not in err
+    assert "Rank held" not in err     # but no rank/tier — not complete
 
 
 def test_no_exercise_score_for_non_capstone(pytester, tmp_path, monkeypatch):
