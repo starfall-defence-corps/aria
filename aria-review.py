@@ -469,11 +469,9 @@ def main():
                 f.write("\n\n## ARIA QUALITATIVE REVIEW\n\n")
                 f.write(review_note)
                 f.write("\n")
-            # Only surface the rank/badge block when this run actually
-            # verified something (tests ran or an LLM review happened) —
-            # otherwise it reads as a verdict the run never reached.
-            if reward_md and (review_text or test_exit_code is not None):
-                f.write(reward_md)
+            # The rank/badge block belongs to the local 'make test' success
+            # banner — PR review comments never include it (E2E feedback on
+            # sdc-academy #119/#123).
 
     # Final banner and exit
     print()
