@@ -382,7 +382,11 @@ def main():
         print("  Deterministic tests: SKIPPED (CI mode)")
         print("  Run 'make test' locally for full verification.")
         print()
-        themed_output = "Tests skipped (CI mode — LLM review only)\n"
+        themed_output = (
+            "Deterministic checks are not re-run in CI — your local "
+            "'make test' verdict is the source of truth for phase "
+            "completion.\n"
+        )
     else:
         test_exit_code, test_stdout, test_stderr = _run_tests(
             args.mission, args.mission_root
@@ -393,10 +397,19 @@ def main():
         print(themed_output)
 
     review_text = ""
+    review_note = ""
 
     # Phase 2: LLM review (if API key available)
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
+        review_note = (
+            "SKIPPED — no ANTHROPIC_API_KEY is configured on this "
+            "repository, so ARIA could not review this submission.\n\n"
+            "To enable AI review on pull requests: create an Anthropic API "
+            "key and add it as a repository secret named ANTHROPIC_API_KEY "
+            "(Settings → Secrets and variables → Actions → "
+            "New repository secret)."
+        )
         print()
         print("----------------------------------------------")
         print("  ARIA qualitative review: SKIPPED")
@@ -422,6 +435,10 @@ def main():
             print()
             print(review_text)
         except Exception as e:
+            review_note = (
+                f"ERRORED — ARIA review failed: {e}\n\n"
+                "Deterministic 'make test' results remain valid."
+            )
             print()
             print("----------------------------------------------")
             print(f"  ARIA review error: {e}")
@@ -445,6 +462,10 @@ def main():
             if review_text:
                 f.write("\n\n## ARIA QUALITATIVE REVIEW\n\n")
                 f.write(review_text)
+            elif review_note:
+                f.write("\n\n## ARIA QUALITATIVE REVIEW\n\n")
+                f.write(review_note)
+                f.write("\n")
             if reward_md:
                 f.write(reward_md)
 
