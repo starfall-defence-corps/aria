@@ -408,7 +408,10 @@ def main():
             "To enable AI review on pull requests: create an Anthropic API "
             "key and add it as a repository secret named ANTHROPIC_API_KEY "
             "(Settings → Secrets and variables → Actions → "
-            "New repository secret)."
+            "New repository secret).\n\n"
+            "Adding the secret does not re-run this review by itself: "
+            "afterwards, go to the Actions tab → this ARIA Review run → "
+            "'Re-run all jobs' (or push any new commit to this branch)."
         )
         print()
         print("----------------------------------------------")
