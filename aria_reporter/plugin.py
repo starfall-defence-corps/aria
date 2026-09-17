@@ -88,6 +88,9 @@ RANK_BY_MISSION = {
 # Missions whose completion confers a NEW rank; all other missions are walked
 # at a rank already held, so the banner reads "Rank held", not "Rank earned"
 # (sdc-academy #116 — live E2E feedback: "earned rank? or kept the rank?").
+# MOS missions (3-4, 3-5) are deliberately NOT here: a single MOS confers
+# nothing — Commander requires completing 2+ MOS (missions/mission-3-5.md) —
+# so an MOS completion correctly logs toward the promotion instead.
 RANK_CONFERRED_BY = {"0", "1-6", "gateway", "master"}
 
 # Rank held while *walking* a conferring mission — the student only gains the
