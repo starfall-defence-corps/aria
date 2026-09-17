@@ -215,16 +215,27 @@ def _render_reward(mission_id):
     """
     try:
         from aria_reporter import reward_for
+        from aria_reporter.plugin import RANK_CONFERRED_BY
     except Exception:
         return ""
     reward = reward_for(mission_id)
     if not reward:
         return ""
     rank, badges = reward
+    if mission_id in RANK_CONFERRED_BY:
+        line = (
+            f"Complete this mission — all phases green in `make test` — "
+            f"to earn the rank of {rank}."
+        )
+    else:
+        line = (
+            f"This mission is walked at the rank of {rank} — complete it "
+            f"(all phases green in `make test`) to log it toward your "
+            f"next promotion."
+        )
     return (
         "\n\n## Rank & Badge\n\n"
-        f"Complete this mission — all phases green in `make test` — to earn the "
-        f"rank of {rank}. Add these badges to your repo README:\n\n"
+        f"{line} Add these badges to your repo README:\n\n"
         f"{badges}\n"
     )
 
