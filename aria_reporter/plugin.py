@@ -72,8 +72,10 @@ def configure(phases=None, friendly=None, mission_id=None, unit="Phase"):
 
 RANK_BY_MISSION = {
     "0": "Midshipman",
-    "1-1": "Sub-Lieutenant", "1-2": "Sub-Lieutenant", "1-3": "Sub-Lieutenant",
-    "1-4": "Sub-Lieutenant", "1-5": "Sub-Lieutenant", "1-6": "Sub-Lieutenant",
+    # Module 1 is walked at Midshipman (sdc-academy #98: "X of 6 toward
+    # Sub-Lieutenant"); completing 1.6 completes the module and confers it.
+    "1-1": "Midshipman", "1-2": "Midshipman", "1-3": "Midshipman",
+    "1-4": "Midshipman", "1-5": "Midshipman", "1-6": "Sub-Lieutenant",
     "gateway": "Lieutenant",
     "2-1": "Lieutenant", "2-2": "Lieutenant", "2-3": "Lieutenant",
     "2-4": "Lieutenant", "2-5": "Lieutenant", "2-6": "Lieutenant",
